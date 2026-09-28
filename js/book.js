@@ -44,21 +44,26 @@ const beamTex = (() => { const c = mk(64, 256), g = c.getContext('2d'), d = g.cr
 
 /* ---------- 책 ---------- */
 const book = new THREE.Group(); scene.add(book);
-const boardMat = new THREE.MeshStandardMaterial({ color:'#18203a', roughness:.85 });
+/* 표지 천 색은 표지 그림(sRGB 텍스처)과 같은 톤으로 보이도록 선형 색으로 바꿔 지정 */
+const boardMat = new THREE.MeshStandardMaterial({ color:new THREE.Color('#1c2748').convertSRGBToLinear(), roughness:.85 });
 const edgeMat = new THREE.MeshStandardMaterial({ color:'#e2d6bf', roughness:.95 });
 const mkBox = (w, h, d, m, x, y) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(x, y, 0); b.castShadow = b.receiveShadow = true; book.add(b); return b; };
-const boardR = mkBox(W + .16, .06, H + .3, boardMat, W / 2 + .08, -.25);
 
-/* 앞표지: 뒤판과 같은 크기·두께의 양장 판. 책등 아래(y -.11)를 축으로 돌아서,
-   덮으면 오른쪽 종이 더미 위에, 펼치면 뒤판과 같은 높이의 왼쪽 판이 된다 */
+/* 면지: 실제 양장본처럼 앞표지와 뒤표지 안쪽에 똑같이 붙는다 */
 const endpaperTex = (() => { const c = mk(512, 716), g = c.getContext('2d');
   g.fillStyle = '#1d2747'; g.fillRect(0, 0, 512, 716); g.fillStyle = g.createPattern(grainCv, 'repeat'); g.fillRect(0, 0, 512, 716);
   for(let y = 30; y < 716; y += 56) for(let x = (y / 56 % 2) * 28 + 20; x < 512; x += 56) D.star(g, 'rgba(217,184,119,.28)', x, y, 5);
   return tex(c); })();
+const endpaperMat = new THREE.MeshStandardMaterial({ map:endpaperTex, roughness:.9 });
+/* BoxGeometry 면 순서: +x, -x, +y(윗면), -y(아랫면), +z, -z */
+const boardR = mkBox(W + .16, .06, H + .3, [boardMat, boardMat, endpaperMat, boardMat, boardMat, boardMat], W / 2 + .08, -.25);
+
+/* 앞표지: 뒤판과 같은 크기·두께의 양장 판. 책등 아래(y -.11)를 축으로 돌아서,
+   덮으면 오른쪽 종이 더미 위에, 펼치면 뒤판과 같은 높이의 왼쪽 판이 된다 */
 const coverTopMat = new THREE.MeshStandardMaterial({ roughness:.72, metalness:.04 });
 const coverHinge = new THREE.Group(); coverHinge.position.set(0, -.11, 0); book.add(coverHinge);
 const coverBoard = new THREE.Mesh(new THREE.BoxGeometry(W + .16, .06, H + .3),
-  [boardMat, boardMat, coverTopMat, new THREE.MeshStandardMaterial({ map:endpaperTex, roughness:.9 }), boardMat, boardMat]);
+  [boardMat, boardMat, coverTopMat, endpaperMat, boardMat, boardMat]);
 coverBoard.position.set(W / 2 + .08, .14, 0); coverBoard.castShadow = coverBoard.receiveShadow = true; coverHinge.add(coverBoard);
 function setCover(theta){ coverHinge.rotation.z = theta; }
 const stackL = mkBox(W - .03, .22, H - .03, edgeMat, -W / 2, -.11);
