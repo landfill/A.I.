@@ -104,6 +104,6 @@ const UI = {
     loading:'Folding the paper…', noVoice:'No English female voice in this browser, so the story appears as subtitles', noSpeech:'This browser can’t read aloud, so the story appears as subtitles',
     dot:(i, t) => `Chapter ${i + 1}: ${t}` }
 };
-let LANG = 'ko';
+let LANG = 'en';
 try { const s = localStorage.getItem('ai-popup-lang'); if(s === 'en' || s === 'ko') LANG = s; } catch(e){}
 const TX = i => LANG === 'en' ? EN[i] : SC[i];

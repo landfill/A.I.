@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>A.I. 팝업북</title>
+  <title>A.I. Pop-up Book</title>
   <meta name="description" content="영화 「A.I.」의 이야기를 열네 장면의 입체 팝업북으로 다시 엮은 헌정 작품. 그림, 음악, 낭독 모두 코드로 만들었습니다.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,25 +12,25 @@
 </head>
 <body>
 
-<canvas id="gl" aria-label="입체 팝업북 장면"></canvas>
+<canvas id="gl" aria-label="Pop-up book scene"></canvas>
 <div class="veil"></div>
 
 <header class="top">
   <div>
-    <div class="mark">A.I.<small data-t="mark">팝업북</small></div>
+    <div class="mark">A.I.<small data-t="mark">Pop-up Book</small></div>
     <div class="chap" aria-live="polite"><span class="no" id="chapNo"></span><span class="ti" id="chapTitle"></span></div>
   </div>
   <div class="toggles">
-    <button class="tg tg-lang" id="tgLang" data-tt="langTip" title="Read in English">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg><span data-t="lang">English</span></button>
-    <button class="tg" id="tgMusic" aria-pressed="true" data-tt="musicTip" title="배경음악 켜기/끄기">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span data-t="music">음악</span></button>
-    <button class="tg" id="tgVoice" aria-pressed="true" data-tt="voiceTip" title="낭독 켜기/끄기">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg><span data-t="voice">낭독</span></button>
-    <button class="tg" id="tgAuto" aria-pressed="true" data-tt="autoTip" title="낭독이 끝나면 자동으로 다음 장 넘기기">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9a5 5 0 0 1 0 10H6"/><path d="M9 11l-4 4 4 4"/></svg><span data-t="auto">자동 넘김</span></button>
-    <button class="tg" id="tgReplay" data-tt="replayTip" title="이 장면 다시 듣기">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg><span data-t="replay">다시 듣기</span></button>
+    <button class="tg tg-lang" id="tgLang" data-tt="langTip" title="한국어로 읽기 (Read in Korean)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg><span data-t="lang">한국어</span></button>
+    <button class="tg" id="tgMusic" aria-pressed="true" data-tt="musicTip" title="Turn music on or off">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span data-t="music">Music</span></button>
+    <button class="tg" id="tgVoice" aria-pressed="true" data-tt="voiceTip" title="Turn narration on or off">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg><span data-t="voice">Narration</span></button>
+    <button class="tg" id="tgAuto" aria-pressed="true" data-tt="autoTip" title="Turn the page when the narration ends">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9a5 5 0 0 1 0 10H6"/><path d="M9 11l-4 4 4 4"/></svg><span data-t="auto">Auto-turn</span></button>
+    <button class="tg" id="tgReplay" data-tt="replayTip" title="Hear this scene again">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg><span data-t="replay">Replay</span></button>
   </div>
 </header>
 
@@ -38,24 +38,24 @@
 
 <section class="caption" aria-live="polite"><p id="capText"></p></section>
 
-<nav class="nav" data-ta="navLabel" aria-label="책장 넘기기">
-  <button class="home" id="homeBtn" data-tt="homeTip" title="책을 덮고 표지로 돌아가기">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg><span data-t="home">표지로</span></button>
-  <button class="arrow" id="prevBtn" data-ta="prev" aria-label="이전 장"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+<nav class="nav" data-ta="navLabel" aria-label="Turn the pages">
+  <button class="home" id="homeBtn" data-tt="homeTip" title="Close the book and return to the cover">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg><span data-t="home">Cover</span></button>
+  <button class="arrow" id="prevBtn" data-ta="prev" aria-label="Previous page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
   <div class="dots" id="dots"></div>
   <div class="count" id="count"></div>
-  <button class="arrow" id="nextBtn" data-ta="next" aria-label="다음 장"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
-  <button class="again" id="againBtn" data-t="again" hidden>처음부터 다시 읽기</button>
+  <button class="arrow" id="nextBtn" data-ta="next" aria-label="Next page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+  <button class="again" id="againBtn" data-t="again" hidden>Read again from the start</button>
 </nav>
 
 <div class="cover" id="coverUI">
-  <p class="eyebrow" data-t="eyebrow">사랑을 배운 아이의 이야기</p>
-  <button class="open-btn" id="openBtn" data-t="open" disabled>책 펼치기</button>
-  <p class="hint" data-t="hint" data-html>소리를 켜 두세요. 한 여성 나레이터가 열네 장면을 차례로 읽어 드려요.<br>화살표 키나 좌우로 쓸어 넘기기로 책장을 넘길 수 있어요.</p>
-  <p class="credit" data-t="credit">스티븐 스필버그 감독의 영화 「A.I.」(2001)에 바치는 비공식 헌정 팝업북입니다. 모든 그림과 음악, 목소리는 코드로 만들었습니다.</p>
+  <p class="eyebrow" data-t="eyebrow">The story of a boy who learned to love</p>
+  <button class="open-btn" id="openBtn" data-t="open" disabled>Open the book</button>
+  <p class="hint" data-t="hint" data-html>Turn your sound on. A woman narrator will read the fourteen scenes to you.<br>Use the arrow keys or swipe to turn the pages.</p>
+  <p class="credit" data-t="credit">An unofficial tribute pop-up book for Steven Spielberg’s film A.I. (2001). Every picture, every note of music and the voice are made with code.</p>
 </div>
 
-<div class="loading" id="loading" data-t="loading">종이를 접고 있어요…</div>
+<div class="loading" id="loading" data-t="loading">Folding the paper…</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="js/paper.js"></script>

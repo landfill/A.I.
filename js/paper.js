@@ -87,6 +87,25 @@ const D = {
     });
     return hand;
   },
+  /* 옆모습으로 서서 하늘을 올려다보는 아이 (오른쪽을 향함). c는 색 문자열이거나, 단위 좌표계에서 채움을 만드는 함수 */
+  profileChild(g, x, base, h, c){
+    g.save(); g.translate(x, base); g.scale(h * 1.22, h);
+    const f = typeof c === 'function' ? c(g) : c;
+    g.fillStyle = f; g.beginPath();
+    g.moveTo(-.028, -.8); g.quadraticCurveTo(-.03, -.765, -.05, -.745); g.quadraticCurveTo(-.068, -.7, -.06, -.6);
+    g.quadraticCurveTo(-.055, -.52, -.062, -.47); g.quadraticCurveTo(-.07, -.43, -.052, -.4); g.lineTo(-.045, -.26);
+    g.quadraticCurveTo(-.04, -.2, -.042, -.12); g.lineTo(-.038, -.03); g.quadraticCurveTo(-.045, 0, -.03, 0); g.lineTo(.085, 0);
+    g.quadraticCurveTo(.1, 0, .09, -.02); g.quadraticCurveTo(.06, -.035, .03, -.045); g.lineTo(.032, -.14);
+    g.quadraticCurveTo(.04, -.22, .038, -.27); g.lineTo(.045, -.42); g.quadraticCurveTo(.055, -.5, .05, -.56);
+    g.quadraticCurveTo(.058, -.66, .052, -.72); g.quadraticCurveTo(.04, -.765, .02, -.785); g.lineTo(.02, -.8); g.closePath(); g.fill();
+    D.line(g, f, .042, [.005, -.735, .03, -.615, .06, -.505]); D.ell(g, f, .064, -.49, .024, .026);
+    g.translate(-.004, -.8); g.rotate(-.3); g.beginPath();
+    g.moveTo(-.024, 0); g.quadraticCurveTo(-.03, -.04, -.06, -.07); g.bezierCurveTo(-.075, -.13, -.03, -.185, .03, -.175);
+    g.quadraticCurveTo(.075, -.165, .085, -.125); g.quadraticCurveTo(.088, -.11, .098, -.095); g.lineTo(.104, -.083);
+    g.quadraticCurveTo(.098, -.076, .092, -.074); g.quadraticCurveTo(.097, -.066, .092, -.058); g.quadraticCurveTo(.095, -.047, .084, -.038);
+    g.quadraticCurveTo(.065, -.028, .045, -.03); g.quadraticCurveTo(.03, -.02, .026, 0); g.closePath(); g.fill();
+    g.restore();
+  },
   teddy(g, x, base, h, c, c2){
     const r = h * .2, hy = base - h + r * 1.1, e = '#2a1d14';
     D.ell(g, c, x - r * .8, hy - r * .75, r * .36, r * .36); D.ell(g, c, x + r * .8, hy - r * .75, r * .36, r * .36);

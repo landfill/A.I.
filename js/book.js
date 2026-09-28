@@ -226,13 +226,22 @@ function makeCover(){
   g.strokeStyle = gold; g.lineWidth = 3; g.strokeRect(100, 90, 834, 1254); g.lineWidth = 1.2; g.strokeRect(116, 106, 802, 1222);
   g.fillStyle = gold; D.stars(g, cw, 420, 40, 12, '#e8c77e', 2.2);
   g.textAlign = 'center'; g.fillStyle = gold;
-  g.font = 'italic 500 250px "Cormorant Garamond", Georgia, serif'; g.fillText('A.I.', 518, 600);
+  /* 제목의 두 마침표를 작은 금빛 별로 바꿔 그림 */
+  g.font = 'italic 500 250px "Cormorant Garamond", Georgia, serif'; g.textAlign = 'left';
+  const wA = g.measureText('A').width, wI = g.measureText('I').width, gap = 62, x0 = 518 - (wA + wI + gap * 2) / 2;
+  g.fillText('A', x0, 600); g.fillText('I', x0 + wA + gap, 600);
+  D.star(g, gold, x0 + wA + gap * .42, 584, 19); D.star(g, gold, x0 + wA + gap + wI + gap * .42, 584, 19);
+  g.textAlign = 'center';
   const en = LANG === 'en', EF = '"Cormorant Garamond", Georgia, serif';
   g.font = en ? `italic 500 60px ${EF}` : '400 50px "Gowun Batang", serif'; g.fillText(en ? 'The Boy Who Learned to Love' : '사랑을 배운 아이', 518, 720);
   g.fillRect(418, 760, 200, 2);
   g.font = en ? `500 30px ${EF}` : '400 26px "Gowun Batang", serif'; g.fillStyle = 'rgba(232,199,126,.85)'; g.fillText(en ? 'A Pop-up Book  ·  Fourteen Scenes' : '입체 그림책 · 열네 개의 장면', 518, 815);
-  g.strokeStyle = gold; g.lineWidth = 2.5; g.beginPath(); g.arc(518, 1040, 120, 0, TAU); g.stroke();
-  g.save(); g.translate(518, 1040); g.scale(100, 100); D.person(g, -.25, 1.05, 1.1, { kind:'child', pose:'reach', dir:1, color:gold }); D.star(g, gold, .5, -.55, .12); g.restore();
+  /* 옆모습의 아이가 별을 올려다보는 금박 그림 */
+  g.strokeStyle = D.lg(g, 270, 0, 770, 0, [[0,'rgba(232,199,126,0)'],[.5,'rgba(232,199,126,.75)'],[1,'rgba(232,199,126,0)']]); g.lineWidth = 2;
+  g.beginPath(); g.moveTo(270, 1192); g.lineTo(770, 1192); g.stroke();
+  D.profileChild(g, 452, 1190, 300, q => D.lg(q, -.1, -1, .1, 0, [[0,'#f6e2a4'],[.55,'#c69f55'],[1,'#e8c77e']]));
+  D.line(g, 'rgba(232,199,126,.55)', 1.5, [662, 896, 662, 966]); D.line(g, 'rgba(232,199,126,.55)', 1.5, [627, 931, 697, 931]);
+  D.star(g, gold, 662, 931, 17); D.star(g, 'rgba(232,199,126,.6)', 724, 1012, 7); D.star(g, 'rgba(232,199,126,.5)', 598, 872, 5);
   g.font = en ? `italic 400 28px ${EF}` : '400 22px "Gowun Batang", serif'; g.fillStyle = 'rgba(232,199,126,.7)';
   g.fillText(en ? 'A tribute to the film A.I. (2001)' : '영화 「A.I.」(2001)에 바치는 헌정', 518, 1270);
   return tex(c);
