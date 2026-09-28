@@ -51,9 +51,9 @@
 
 ## 실행하기
 
-빌드 과정이 없는 HTML 파일 하나입니다.
+빌드 과정이 없는 정적 파일입니다.
 
-- `index.html`을 브라우저로 바로 열면 됩니다.
+- `index.html`을 브라우저로 바로 열면 됩니다. (ES 모듈을 쓰지 않아 파일을 직접 열어도 동작합니다)
 - 로컬 서버로 띄우려면:
 
 ```bash
@@ -70,6 +70,24 @@ python -m http.server 5178
 - 한국어: Windows의 Microsoft Heami, Edge의 SunHi(Natural), macOS의 Yuna, Chrome의 Google 한국의 음성 등을 우선 사용합니다.
 - 영어: Edge의 Aria·Jenny(Natural), Chrome의 Google US English, Windows의 Zira, macOS의 Samantha 등을 우선 사용합니다.
 - 영어 음성이 없다면 Windows 설정 → 시간 및 언어 → 음성에서 영어 음성을 추가하거나, Edge·Chrome으로 열어 보세요.
+
+## 파일 구조
+
+```
+index.html          화면 뼈대 (버튼, 자막, 표지 안내)와 스크립트 불러오기
+css/style.css       UI 스타일
+js/paper.js         공용 유틸, 종이 오리기·그리기 도구, 종이 단면·결 마감
+js/scenes.js        14장면 데이터: 한국어 나레이션, 조명, 음악 분위기, 종이 조각 그림
+js/i18n.js          영어판 본문, 화면 문구(한국어·영어), 현재 언어
+js/book.js          Three.js 무대, 책과 넘기는 책장, 팝업 동작, 빛·물·입자, 카메라
+js/audio.js         배경음악과 효과음 합성
+js/narration.js     여성 나레이션 (언어별 여성 목소리 선택)
+js/main.js          책장 넘기기 제어, 자막, 언어 전환, 입력, 렌더 루프와 시작
+```
+
+스크립트는 모듈 없이 일반 `<script>` 태그로 위 순서대로 불러옵니다. 각 파일의 최상위 선언은 모든 스크립트가 함께 쓰는 전역 범위에 놓이므로, 뒤 파일은 앞 파일에서 선언한 이름을 그대로 씁니다. 파일을 추가할 때는 `index.html`의 불러오는 순서에 맞춰 넣어 주세요.
+
+장면을 고치거나 추가하려면 `js/scenes.js`의 `SC` 배열(한국어)과 `js/i18n.js`의 `EN` 배열(영어)을 같은 순서로 함께 수정하면 됩니다.
 
 ## 기술
 
