@@ -31,7 +31,7 @@ function go(to){
     setMap(leafFrontMat, fwd ? spreadOf(from).R : spreadOf(to).R);
     setMap(leafBackMat, fwd ? spreadOf(to).L : spreadOf(from).L);
   }
-  ST.turn = { t:0, fwd, from, to, started:false, landed:false, rose:false, half:false };
+  ST.turn = { t:0, fwd, from, to, started:false, landed:false, rose:false };
   ST.busy = true; camMode = toCover ? 'cover' : 'open';
   if(toCover){ LT = lookOf(COVER_LOOK); document.body.classList.add('closing'); }
   else { LT = lookOf(SC[to].look); Music.setMood(SC[to].mood); setChapter(to); }
@@ -42,11 +42,11 @@ function updateTurn(dt){
   const p = clamp((T.t - L0) / LD);
   const cover = T.from < 0 || T.to < 0;  /* 표지를 여닫을 때는 책장 대신 양장 앞표지가 돈다 */
   if(T.t >= L0 && !T.started){ T.started = true; showLeaf(!cover); Sfx.turn();
-    if(T.fwd) setMap(pageMatR, spreadOf(T.to).R); else if(T.to >= 0) setMap(pageMatL, spreadOf(T.to).L); else [pageL, stackL].forEach(m => m.visible = false); }
+    if(T.fwd) setMap(pageMatR, spreadOf(T.to).R);
+    if(T.to >= 0 && (T.from < 0 || !T.fwd)) setMap(pageMatL, spreadOf(T.to).L); }
   if(!T.started) return;
   const e = ease(p), theta = T.fwd ? Math.PI * e : Math.PI * (1 - e);
   if(cover) setCover(theta); else setLeaf(theta, (T.fwd ? -1 : 1) * .75 * Math.sin(theta));
-  if(T.from < 0 && !T.half && theta > Math.PI * .5){ T.half = true; [pageL, stackL].forEach(m => m.visible = true); setMap(pageMatL, spreadOf(T.to).L); }
   if(T.to >= 0 && p >= .86 && !T.rose){ T.rose = true; riseScene(objs[T.to]); Sfx.pop(); }
   if(p >= 1 && !T.landed){ T.landed = true; Sfx.land(); showLeaf(false);
     if(T.to < 0) setMap(pageMatR, spreadOf(0).R);
@@ -159,7 +159,6 @@ async function boot(){
   coverTex = makeCover();
   ensure(0);
   setMap(coverTopMat, coverTex); setMap(pageMatR, spreadOf(0).R);
-  [pageL, stackL].forEach(m => m.visible = false);
   setLeaf(0, 0); showLeaf(false); setCover(0);
   updateLook(1); updateCamera(0, 0, true);
   requestAnimationFrame(t => { last = t; frame(t); });

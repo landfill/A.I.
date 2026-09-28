@@ -65,7 +65,6 @@ const coverHinge = new THREE.Group(); coverHinge.position.set(0, -.11, 0); book.
 const coverBoard = new THREE.Mesh(new THREE.BoxGeometry(W + .16, .06, H + .3),
   [boardMat, boardMat, coverTopMat, endpaperMat, boardMat, boardMat]);
 coverBoard.position.set(W / 2 + .08, .14, 0); coverBoard.castShadow = coverBoard.receiveShadow = true; coverHinge.add(coverBoard);
-function setCover(theta){ coverHinge.rotation.z = theta; }
 const stackL = mkBox(W - .03, .22, H - .03, edgeMat, -W / 2, -.11);
 const stackR = mkBox(W - .03, .22, H - .03, edgeMat, W / 2, -.11);
 const pageGeo = x => { const g = new THREE.PlaneGeometry(W, H); g.rotateX(-Math.PI / 2); g.translate(x, .003, 0); return g; };
@@ -73,6 +72,16 @@ const pageMatL = new THREE.MeshStandardMaterial({ roughness:.95, color:'#ffffff'
 const pageMatR = new THREE.MeshStandardMaterial({ roughness:.95, color:'#ffffff' });
 const pageL = new THREE.Mesh(pageGeo(-W / 2), pageMatL), pageR = new THREE.Mesh(pageGeo(W / 2), pageMatR);
 pageL.receiveShadow = pageR.receiveShadow = true; book.add(pageL, pageR);
+
+/* 왼쪽 종이 더미와 왼쪽 면은 앞표지와 한 몸처럼 같은 축으로 돈다.
+   덮인 상태(theta 0)에서는 오른쪽 더미 안에 뒤집혀 겹쳐 있으므로 숨기고, 표지가 들리는 순간부터 보인다 */
+const leftHinge = new THREE.Group(); leftHinge.position.set(0, -.11, 0); book.add(leftHinge);
+const leftBlock = new THREE.Group(); leftBlock.position.set(0, .11, 0); leftHinge.add(leftBlock);
+leftBlock.add(stackL, pageL);
+function setCover(theta){
+  coverHinge.rotation.z = theta; leftHinge.rotation.z = theta - Math.PI;
+  stackL.visible = pageL.visible = theta > .04;
+}
 
 const SEG = 48, LEAF_Y = .012;
 const leafGeo = new THREE.PlaneGeometry(W, H, SEG, 1); leafGeo.rotateX(-Math.PI / 2);
