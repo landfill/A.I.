@@ -1,0 +1,1485 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>A.I. 팝업북</title>
+<meta name="description" content="영화 「A.I.」의 이야기를 열네 장면의 입체 팝업북으로 다시 엮은 헌정 작품. 그림, 음악, 낭독 모두 코드로 만들었습니다.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,400;1,500&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night:#07080f;
+    --ink:#0c0f1d;
+    --gold:#d9b877;
+    --gold-soft:rgba(217,184,119,.42);
+    --mist:#a3abc9;
+    --text:#efe9f6;
+    --panel:rgba(9,11,22,.52);
+    color-scheme:dark;
+  }
+  [hidden]{display:none!important}
+  html,body{height:100%;margin:0;background:var(--night);color:var(--text);overflow:hidden}
+  body{font-family:"Gowun Batang","Nanum Myeongjo","AppleMyungjo","Batang",serif;-webkit-font-smoothing:antialiased}
+  #gl{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:default}
+  .veil{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse 75% 70% at 50% 42%,rgba(0,0,0,0) 50%,rgba(3,4,10,.62) 100%)}
+  button{font:inherit;color:inherit}
+  button:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+
+  .top{position:fixed;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
+       padding:calc(14px + env(safe-area-inset-top,0px)) 20px 0;pointer-events:none}
+  .top>*{pointer-events:auto}
+  .mark{font-family:"Cormorant Garamond",Georgia,serif;font-style:italic;font-weight:500;font-size:24px;letter-spacing:.04em;color:var(--gold);line-height:1}
+  .mark small{font-family:"Gowun Batang",serif;font-style:normal;font-size:12px;letter-spacing:.24em;color:var(--mist);margin-left:10px;vertical-align:3px}
+  .chap{margin-top:8px;font-size:14px;color:var(--mist);display:flex;gap:10px;align-items:baseline;opacity:0;transition:opacity .8s}
+  .chap .no{font-family:"Cormorant Garamond",Georgia,serif;font-size:16px;font-variant-numeric:tabular-nums;color:var(--gold)}
+  .chap .ti{color:var(--text);letter-spacing:.06em}
+  body.open .chap{opacity:1}
+  .toggles{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:60vw}
+  .tg{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:999px;border:1px solid rgba(163,171,201,.28);
+      background:var(--panel);font-size:13px;letter-spacing:.04em;cursor:pointer;transition:border-color .3s,opacity .3s,color .3s}
+  .tg svg{width:15px;height:15px;flex:none}
+  .tg:hover{border-color:var(--gold-soft)}
+  .tg[aria-pressed="false"]{opacity:.5}
+  .tg[aria-pressed="true"]{color:#f6ecd4}
+
+  .caption{position:fixed;left:16px;right:16px;bottom:calc(84px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;pointer-events:none}
+  .caption p{max-width:34em;margin:0;text-align:center;font-size:clamp(16px,1.75vw,21px);line-height:1.8;color:#f6f1fb;word-break:keep-all;
+       text-shadow:0 1px 2px rgba(0,0,0,.9),0 0 22px rgba(6,8,20,.95),0 0 44px rgba(6,8,20,.8);transition:opacity .55s ease,transform .55s ease}
+  .caption p.out{opacity:0;transform:translateY(6px)}
+
+  .nav{position:fixed;left:0;right:0;bottom:0;padding:0 16px calc(20px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;align-items:center;gap:16px;
+       opacity:0;pointer-events:none;transition:opacity .8s}
+  body.open .nav{opacity:1;pointer-events:auto}
+  body.closing .nav,body.closing .chap,body.closing .caption{opacity:0;pointer-events:none}
+  body.open .cover{opacity:0;pointer-events:none}
+  body.open .caption{display:flex}
+  .arrow{width:44px;height:44px;border-radius:50%;border:1px solid var(--gold-soft);background:var(--panel);color:var(--gold);cursor:pointer;display:grid;place-items:center;transition:border-color .3s,opacity .3s}
+  .arrow svg{width:18px;height:18px}
+  .arrow:hover{border-color:var(--gold)}
+  .arrow:disabled{opacity:.25;cursor:default}
+  .dots{display:flex;gap:2px;align-items:center}
+  .dot{width:20px;height:24px;border:0;padding:0;background:none;cursor:pointer;display:grid;place-items:center}
+  .dot::before{content:"";width:6px;height:6px;border-radius:50%;background:rgba(239,233,246,.28);transition:background .4s,box-shadow .4s,transform .4s}
+  .dot:hover::before{background:rgba(239,233,246,.6)}
+  .dot.on::before{background:var(--gold);box-shadow:0 0 10px var(--gold);transform:scale(1.35)}
+  .count{display:none;font-family:"Cormorant Garamond",Georgia,serif;font-size:18px;color:var(--gold);font-variant-numeric:tabular-nums;min-width:4.2em;text-align:center}
+  .home{display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 16px 0 13px;border-radius:999px;border:1px solid rgba(163,171,201,.3);background:var(--panel);
+        font-size:13.5px;letter-spacing:.06em;cursor:pointer;transition:border-color .3s;margin-right:4px}
+  .home svg{width:17px;height:17px}
+  .home:hover{border-color:var(--gold-soft)}
+  body.en .caption p{font-family:"Cormorant Garamond",Georgia,serif;font-size:clamp(18px,2vw,24px);line-height:1.55;font-weight:500}
+  body.en .chap .ti{font-family:"Cormorant Garamond",Georgia,serif;font-size:16px;font-style:italic;letter-spacing:.02em}
+  body.en .eyebrow{font-family:"Cormorant Garamond",Georgia,serif;font-style:italic;font-size:17px;letter-spacing:.12em}
+  body.en .open-btn{font-family:"Cormorant Garamond",Georgia,serif;font-size:19px;letter-spacing:.2em}
+  .again{height:44px;padding:0 20px;border-radius:999px;border:1px solid var(--gold);background:var(--panel);color:var(--gold);letter-spacing:.14em;cursor:pointer}
+
+  .cover{position:fixed;left:16px;right:16px;bottom:calc(34px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;transition:opacity .8s}
+  .eyebrow{margin:0;font-size:14px;letter-spacing:.3em;color:var(--mist)}
+  .open-btn{font-size:17px;letter-spacing:.34em;padding:15px 30px 15px 38px;border:1px solid var(--gold);color:var(--gold);background:rgba(10,12,24,.6);border-radius:999px;cursor:pointer;
+            box-shadow:0 0 34px rgba(217,184,119,.18);transition:box-shadow .4s,background .4s}
+  .open-btn:hover{box-shadow:0 0 44px rgba(217,184,119,.36);background:rgba(24,22,30,.7)}
+  .open-btn:disabled{opacity:.4;cursor:wait}
+  .hint{margin:0;font-size:13px;color:var(--mist);line-height:1.6;word-break:keep-all}
+  .credit{margin:0;font-size:11.5px;color:rgba(163,171,201,.7);max-width:40em;line-height:1.7;word-break:keep-all}
+  .note{position:fixed;left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top,0px));font-size:12.5px;color:var(--mist);background:var(--panel);
+        border:1px solid rgba(163,171,201,.2);padding:7px 14px;border-radius:999px;white-space:nowrap;max-width:calc(100vw - 32px);overflow:hidden;text-overflow:ellipsis}
+
+  .loading{position:fixed;inset:0;display:grid;place-items:center;background:var(--night);color:var(--mist);font-size:15px;letter-spacing:.24em;transition:opacity 1.2s}
+  .loading.gone{opacity:0;pointer-events:none}
+
+  @media (max-width:640px){
+    .dots{display:none}
+    .count{display:block}
+    .tg span{display:none}
+    .tg.tg-lang span{display:inline}
+    .home{padding:0 13px 0 11px;margin-right:0}
+    .nav{gap:10px}
+    .tg{padding:0 10px}
+    .top{padding-left:16px;padding-right:16px}
+    .mark small{display:none}
+    .caption{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .caption p,.chap,.nav,.cover,.loading{transition:none}
+  }
+</style>
+
+<canvas id="gl" aria-label="입체 팝업북 장면"></canvas>
+<div class="veil"></div>
+
+<header class="top">
+  <div>
+    <div class="mark">A.I.<small data-t="mark">팝업북</small></div>
+    <div class="chap" aria-live="polite"><span class="no" id="chapNo"></span><span class="ti" id="chapTitle"></span></div>
+  </div>
+  <div class="toggles">
+    <button class="tg tg-lang" id="tgLang" data-tt="langTip" title="Read in English">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg><span data-t="lang">English</span></button>
+    <button class="tg" id="tgMusic" aria-pressed="true" data-tt="musicTip" title="배경음악 켜기/끄기">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span data-t="music">음악</span></button>
+    <button class="tg" id="tgVoice" aria-pressed="true" data-tt="voiceTip" title="낭독 켜기/끄기">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg><span data-t="voice">낭독</span></button>
+    <button class="tg" id="tgAuto" aria-pressed="true" data-tt="autoTip" title="낭독이 끝나면 자동으로 다음 장 넘기기">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9a5 5 0 0 1 0 10H6"/><path d="M9 11l-4 4 4 4"/></svg><span data-t="auto">자동 넘김</span></button>
+    <button class="tg" id="tgReplay" data-tt="replayTip" title="이 장면 다시 듣기">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg><span data-t="replay">다시 듣기</span></button>
+  </div>
+</header>
+
+<div class="note" id="voiceNote" hidden></div>
+
+<section class="caption" aria-live="polite"><p id="capText"></p></section>
+
+<nav class="nav" data-ta="navLabel" aria-label="책장 넘기기">
+  <button class="home" id="homeBtn" data-tt="homeTip" title="책을 덮고 표지로 돌아가기">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg><span data-t="home">표지로</span></button>
+  <button class="arrow" id="prevBtn" data-ta="prev" aria-label="이전 장"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+  <div class="dots" id="dots"></div>
+  <div class="count" id="count"></div>
+  <button class="arrow" id="nextBtn" data-ta="next" aria-label="다음 장"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+  <button class="again" id="againBtn" data-t="again" hidden>처음부터 다시 읽기</button>
+</nav>
+
+<div class="cover" id="coverUI">
+  <p class="eyebrow" data-t="eyebrow">사랑을 배운 아이의 이야기</p>
+  <button class="open-btn" id="openBtn" data-t="open" disabled>책 펼치기</button>
+  <p class="hint" data-t="hint" data-html>소리를 켜 두세요. 한 여성 나레이터가 열네 장면을 차례로 읽어 드려요.<br>화살표 키나 좌우로 쓸어 넘기기로 책장을 넘길 수 있어요.</p>
+  <p class="credit" data-t="credit">스티븐 스필버그 감독의 영화 「A.I.」(2001)에 바치는 비공식 헌정 팝업북입니다. 모든 그림과 음악, 목소리는 코드로 만들었습니다.</p>
+</div>
+
+<div class="loading" id="loading" data-t="loading">종이를 접고 있어요…</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+(function(){
+/* =========================================================
+   기본 유틸
+   ========================================================= */
+const W = 5, H = 7, TAU = Math.PI * 2;
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+const easeBack = t => { const c1 = 1.25, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); };
+function rng(seed){ return function(){ seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function mk(w, h){ const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+function hexA(h, a){ if(h[0] !== '#') return h; const n = parseInt(h.slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; }
+
+const grainCv = (() => { const c = mk(128, 128), g = c.getContext('2d'), d = g.createImageData(128, 128), r = rng(3);
+  for(let i = 0; i < d.data.length; i += 4){ const v = r() < .5 ? 0 : 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = r() * 26; }
+  g.putImageData(d, 0, 0); return c; })();
+
+/* =========================================================
+   종이 오리기 도구 (세계 단위로 그림)
+   ========================================================= */
+const D = {
+  lg(g, x0, y0, x1, y1, st){ const q = g.createLinearGradient(x0, y0, x1, y1); st.forEach(s => q.addColorStop(s[0], s[1])); return q; },
+  rg(g, x, y, r0, r1, st){ const q = g.createRadialGradient(x, y, r0, x, y, r1); st.forEach(s => q.addColorStop(s[0], s[1])); return q; },
+  ell(g, c, x, y, rx, ry, rot){ g.beginPath(); g.ellipse(x, y, Math.abs(rx), Math.abs(ry), rot || 0, 0, TAU); g.fillStyle = c; g.fill(); },
+  rect(g, c, x, y, w, h){ g.fillStyle = c; g.fillRect(x, y, w, h); },
+  rr(g, x, y, w, h, r){ r = Math.min(r, w / 2, h / 2); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); },
+  rrf(g, c, x, y, w, h, r){ D.rr(g, x, y, w, h, r); g.fillStyle = c; g.fill(); },
+  poly(g, c, p){ g.beginPath(); g.moveTo(p[0], p[1]); for(let i = 2; i < p.length; i += 2) g.lineTo(p[i], p[i + 1]); g.closePath(); g.fillStyle = c; g.fill(); },
+  line(g, c, lw, p){ g.beginPath(); g.moveTo(p[0], p[1]); for(let i = 2; i < p.length; i += 2) g.lineTo(p[i], p[i + 1]); g.strokeStyle = c; g.lineWidth = lw; g.lineCap = 'round'; g.lineJoin = 'round'; g.stroke(); },
+  back(g, w, h, fill, r){ r = r ?? .35; g.beginPath(); g.moveTo(0, h); g.lineTo(0, r); g.quadraticCurveTo(0, 0, r, 0); g.lineTo(w - r, 0); g.quadraticCurveTo(w, 0, w, r); g.lineTo(w, h); g.closePath(); g.fillStyle = fill; g.fill(); },
+  arch(g, w, h, fill, k){ k = k ?? .3; g.beginPath(); g.moveTo(0, h); g.lineTo(0, h * k); g.bezierCurveTo(w * .08, -h * .03, w * .92, -h * .03, w, h * k); g.lineTo(w, h); g.closePath(); g.fillStyle = fill; g.fill(); },
+  atop(g, fn){ g.save(); g.globalCompositeOperation = 'source-atop'; fn(); g.restore(); },
+  cut(g, fn){ g.save(); g.globalCompositeOperation = 'destination-out'; g.fillStyle = '#000'; g.strokeStyle = '#000'; fn(); g.restore(); },
+  stars(g, w, h, n, seed, c, rmax){ const r = rng(seed); g.fillStyle = c; for(let i = 0; i < n; i++){ g.globalAlpha = .35 + r() * .65; g.beginPath(); g.arc(r() * w, r() * h, .008 + r() * (rmax || .022), 0, TAU); g.fill(); } g.globalAlpha = 1; },
+  window(g, x, y, w, h, frame, glass, fw){ fw = fw || .07; D.rrf(g, frame, x, y, w, h, .04); D.rrf(g, glass, x + fw, y + fw, w - fw * 2, h - fw * 2, .02); },
+
+  person(g, x, base, Hh, o){
+    o = o || {}; const k = o.kind || 'child', c = o.color || '#222', d = o.dir || 1, pose = o.pose || 'stand';
+    const child = k === 'child', woman = k === 'woman', mecha = k === 'mecha';
+    const hr = Hh * (child ? .1 : mecha ? .06 : .066);
+    const headH = mecha ? hr * 1.7 : hr;
+    const hy = base - Hh + headH;
+    const shY = hy + headH + Hh * (child ? .03 : mecha ? .03 : .045);
+    const shW = Hh * (child ? .2 : woman ? .16 : mecha ? .12 : .21);
+    const hipY = base - Hh * (child ? .43 : mecha ? .53 : .48);
+    const hipW = Hh * (child ? .15 : woman ? .15 : mecha ? .07 : .15);
+    const lw = Hh * (child ? .062 : mecha ? .024 : .048);
+    const kneel = pose === 'kneel';
+    g.fillStyle = c;
+    if(woman) D.ell(g, c, x - d * hr * .12, hy + hr * .6, hr * 1.12, hr * 1.55);
+    if(!kneel){
+      const st = (o.stride || 0) * Hh;
+      D.line(g, c, lw * 1.05, [x - hipW * .28, hipY, x - hipW * .3 - st, base - lw * .5]);
+      D.line(g, c, lw * 1.05, [x + hipW * .28, hipY, x + hipW * .3 + st, base - lw * .5]);
+      D.ell(g, c, x - hipW * .3 - st + d * lw * .15, base - lw * .38, lw * .8, lw * .38);
+      D.ell(g, c, x + hipW * .3 + st + d * lw * .15, base - lw * .38, lw * .8, lw * .38);
+    }
+    g.beginPath(); g.moveTo(x - shW / 2, shY + lw * .6); g.quadraticCurveTo(x - shW / 2, shY, x - shW / 2 + lw * .8, shY);
+    g.lineTo(x + shW / 2 - lw * .8, shY); g.quadraticCurveTo(x + shW / 2, shY, x + shW / 2, shY + lw * .6);
+    g.lineTo(x + hipW / 2, hipY + lw * .3); g.lineTo(x - hipW / 2, hipY + lw * .3); g.closePath(); g.fillStyle = c; g.fill();
+    if(woman || kneel){
+      const sb = kneel ? base : base - Hh * .16, sw = Hh * (kneel ? .38 : .3), wy = hipY - Hh * .05;
+      g.beginPath(); g.moveTo(x - hipW * .5, wy); g.lineTo(x + hipW * .5, wy);
+      g.quadraticCurveTo(x + sw * .42, sb - Hh * .12, x + sw / 2, sb); g.lineTo(x - sw / 2, sb);
+      g.quadraticCurveTo(x - sw * .42, sb - Hh * .12, x - hipW * .5, wy); g.closePath(); g.fill();
+    }
+    if(o.coat){ g.beginPath(); g.moveTo(x - shW / 2, shY + lw * .5); g.lineTo(x + shW / 2, shY + lw * .5); g.lineTo(x + Hh * .16, base - Hh * .22); g.lineTo(x - Hh * .16, base - Hh * .22); g.closePath(); g.fill(); }
+    g.fillRect(x - hr * .3, hy + headH * .5, hr * .6, shY - hy - headH * .3);
+    D.ell(g, c, x, hy, hr * (mecha ? .68 : .9), headH);
+    if(child) D.ell(g, c, x - d * hr * .06, hy - hr * .26, hr * .98, hr * .8);
+    if(woman) D.ell(g, c, x + d * hr * .25, hy - hr * .58, hr * .58, hr * .44);
+    if(o.hat){ D.ell(g, c, x, hy - hr * .62, hr * 1.65, hr * .22); D.rrf(g, c, x - hr * .82, hy - hr * 1.6, hr * 1.64, hr * 1.02, hr * .26); }
+    const al = Hh * (child ? .31 : mecha ? .44 : .37), sx = shW / 2 - lw * .45, sy = shY + lw * .5;
+    const P = { stand:[[-1,.1,.06],[1,.1,.06]], hold:[[-1,.35,-1.9],[1,.35,-1.9]], pray:[[-1,.22,-2.4],[1,.22,-2.4]],
+      open:[[-1,2.35,.25],[1,2.35,.25]], reach:[[-d,.12,.06],[d,1.95,.2]], out:[[-d,.12,.06],[d,1.4,.1]], wave:[[-d,.12,.06],[d,2.6,.3]] };
+    let hand = [x, sy];
+    (P[o.arms || (kneel ? 'out' : pose)] || P.stand).forEach(([s, a, b]) => {
+      const ex = x + s * sx + Math.sin(a) * s * al * .5, ey = sy + Math.cos(a) * al * .5, a2 = a + b;
+      const hx = ex + Math.sin(a2) * s * al * .5, hy2 = ey + Math.cos(a2) * al * .5;
+      D.line(g, c, lw * .88, [x + s * sx, sy, ex, ey, hx, hy2]); D.ell(g, c, hx, hy2, lw * .55, lw * .55); hand = [hx, hy2];
+    });
+    return hand;
+  },
+  teddy(g, x, base, h, c, c2){
+    const r = h * .2, hy = base - h + r * 1.1, e = '#2a1d14';
+    D.ell(g, c, x - r * .8, hy - r * .75, r * .36, r * .36); D.ell(g, c, x + r * .8, hy - r * .75, r * .36, r * .36);
+    D.ell(g, c2, x - r * .8, hy - r * .75, r * .18, r * .18); D.ell(g, c2, x + r * .8, hy - r * .75, r * .18, r * .18);
+    D.ell(g, c, x - r * .62, base - r * .42, r * .44, r * .42); D.ell(g, c, x + r * .62, base - r * .42, r * .44, r * .42);
+    D.ell(g, c, x, base - h * .34, r * 1.02, h * .27);
+    D.ell(g, c, x - r * 1.0, base - h * .42, r * .3, r * .58, .55); D.ell(g, c, x + r * 1.0, base - h * .42, r * .3, r * .58, -.55);
+    D.ell(g, c, x, hy, r, r * .94); D.ell(g, c2, x, hy + r * .36, r * .42, r * .3); D.ell(g, c2, x, base - h * .3, r * .55, h * .15);
+    D.ell(g, e, x, hy + r * .24, r * .13, r * .09); D.ell(g, e, x - r * .38, hy - r * .12, r * .08, r * .09); D.ell(g, e, x + r * .38, hy - r * .12, r * .08, r * .09);
+  },
+  pine(g, x, base, h, c){ g.fillStyle = c; g.fillRect(x - h * .025, base - h * .2, h * .05, h * .2);
+    for(let i = 0; i < 4; i++){ const t = i / 4, y0 = base - h * .12 - t * h * .6, ww = h * .44 * (1 - t * .62); g.beginPath(); g.moveTo(x - ww / 2, y0); g.lineTo(x, y0 - h * .36); g.lineTo(x + ww / 2, y0); g.closePath(); g.fill(); } },
+  tree(g, x, base, h, c, seed){ const r = rng(seed || 1); D.line(g, c, h * .05, [x, base, x + (r() - .5) * h * .05, base - h * .55]);
+    for(let i = 0; i < 8; i++) D.ell(g, c, x + (r() - .5) * h * .5, base - h * .64 - (r() - .35) * h * .32, h * (.13 + r() * .1), h * (.11 + r() * .08)); },
+  trunks(g, x0, x1, base, top, n, seed, c, wmin, wmax){ const r = rng(seed);
+    for(let i = 0; i < n; i++){ const x = x0 + (x1 - x0) * (i + .1 + r() * .8) / n, w = wmin + (wmax - wmin) * r(), tt = top + r() * (base - top) * .22;
+      g.fillStyle = c; g.beginPath(); g.moveTo(x - w / 2, base); g.lineTo(x - w * .3, tt); g.lineTo(x + w * .3, tt); g.lineTo(x + w / 2, base); g.closePath(); g.fill();
+      for(let b = 0; b < 3; b++){ const by = tt + (base - tt) * (.08 + r() * .42), s = r() < .5 ? -1 : 1, bl = w * (1.8 + r() * 3); D.line(g, c, w * .22, [x, by, x + s * bl, by - bl * .7]); } } },
+  skyline(g, x0, x1, base, o){ const r = rng(o.seed || 1); let x = x0; const wins = [];
+    while(x < x1){ const bw = o.wmin + (o.wmax - o.wmin) * r(), bh = o.hmin + (o.hmax - o.hmin) * r(), top = base - bh;
+      g.fillStyle = o.c; g.fillRect(x, top, bw * .94, bh + .01);
+      if(r() < .38){ g.fillRect(x + bw * .22, top - bh * .1, bw * .5, bh * .1 + .01); if(r() < .6) g.fillRect(x + bw * .44, top - bh * .3, bw * .05, bh * .2); }
+      const cols = Math.max(2, Math.floor(bw / .14)), rows = Math.floor((bh - .1) / .2);
+      for(let i = 0; i < cols; i++) for(let j = 0; j < rows; j++) if(r() < o.win){ const lc = Array.isArray(o.lit) ? o.lit[Math.floor(r() * o.lit.length)] : o.lit; wins.push([x + (i + .5) * (bw * .94) / cols - .03, top + .12 + j * .2, .06, .09, lc]); }
+      x += bw; }
+    wins.forEach(w => { g.fillStyle = w[4]; g.fillRect(w[0], w[1], w[2], w[3]); }); return wins; },
+  wins(g, wins, c){ wins.forEach(w => { g.fillStyle = c || w[4]; g.fillRect(w[0], w[1], w[2], w[3]); }); },
+  moon(g, x, y, r, c, c2){ g.beginPath(); g.arc(x, y, r, 0, TAU); g.fillStyle = D.rg(g, x - r * .3, y - r * .3, r * .1, r * 1.1, [[0, c], [1, c2]]); g.fill();
+    const q = rng(5); for(let i = 0; i < 8; i++){ const a = q() * TAU, dd = q() * r * .68; D.ell(g, 'rgba(120,105,90,.16)', x + Math.cos(a) * dd, y + Math.sin(a) * dd, r * (.06 + q() * .12), r * (.06 + q() * .1)); } },
+  wheel(g, cx, cy, r, c, lw){ g.strokeStyle = c; g.lineWidth = lw; g.beginPath(); g.arc(cx, cy, r, 0, TAU); g.stroke(); g.beginPath(); g.arc(cx, cy, r * .9, 0, TAU); g.stroke();
+    for(let i = 0; i < 16; i++){ const a = i / 16 * TAU; D.line(g, c, lw * .55, [cx, cy, cx + Math.cos(a) * r, cy + Math.sin(a) * r]); }
+    for(let i = 0; i < 12; i++){ const a = i / 12 * TAU; D.rrf(g, c, cx + Math.cos(a) * r - r * .07, cy + Math.sin(a) * r, r * .14, r * .12, r * .03); }
+    D.ell(g, c, cx, cy, r * .08, r * .08); },
+  car(g, x, base, s, c){ g.beginPath(); g.moveTo(x - s * .5, base - s * .1); g.quadraticCurveTo(x - s * .48, base - s * .42, x - s * .05, base - s * .45);
+    g.quadraticCurveTo(x + s * .36, base - s * .44, x + s * .5, base - s * .18); g.lineTo(x + s * .5, base - s * .08); g.closePath(); g.fillStyle = c; g.fill();
+    D.ell(g, c, x - s * .3, base - s * .08, s * .09, s * .09); D.ell(g, c, x + s * .3, base - s * .08, s * .09, s * .09); },
+  sub(g, x, y, s, c, c2, dir, inner){ g.save(); g.translate(x, y); g.scale(dir || 1, 1);
+    D.line(g, c, s * .03, [-s * .36, -s * .36, s * .36, -s * .36]); g.fillStyle = c; g.fillRect(-s * .02, -s * .36, s * .04, s * .14);
+    D.ell(g, c, -s * .58, 0, s * .1, s * .15); D.ell(g, c, 0, 0, s * .55, s * .26);
+    D.ell(g, c2, s * .12, -s * .08, s * .24, s * .18); if(inner) inner(s * .12, -s * .08);
+    D.line(g, c, s * .035, [-s * .36, s * .31, s * .36, s * .31]); D.line(g, c, s * .03, [-s * .2, s * .2, -s * .22, s * .31]); D.line(g, c, s * .03, [s * .2, s * .2, s * .22, s * .31]);
+    D.ell(g, '#fff4c8', s * .52, s * .05, s * .06, s * .05); g.restore(); },
+  fairy(g, x, base, h, c1, c2){ const gr = D.lg(g, x, base - h, x, base, [[0, c1], [1, c2]]); g.fillStyle = gr;
+    g.beginPath(); g.moveTo(x - h * .07, base - h * .7); g.quadraticCurveTo(x - h * .12, base - h * .3, x - h * .3, base); g.lineTo(x + h * .3, base); g.quadraticCurveTo(x + h * .12, base - h * .3, x + h * .07, base - h * .7); g.closePath(); g.fill();
+    g.beginPath(); g.moveTo(x - h * .08, base - h * .79); g.lineTo(x + h * .08, base - h * .79); g.lineTo(x + h * .06, base - h * .62); g.lineTo(x - h * .06, base - h * .62); g.closePath(); g.fill();
+    D.ell(g, gr, x, base - h * .86, h * .05, h * .06); D.ell(g, gr, x - h * .01, base - h * .895, h * .066, h * .045);
+    D.poly(g, c1, [x - h * .05, base - h * .92, x - h * .03, base - h * .975, x, base - h * .935, x + h * .03, base - h * .975, x + h * .05, base - h * .92]);
+    D.line(g, gr, h * .026, [x - h * .08, base - h * .76, x - h * .14, base - h * .6, x - h * .12, base - h * .5]);
+    D.line(g, gr, h * .026, [x + h * .08, base - h * .76, x + h * .17, base - h * .83, x + h * .21, base - h * .93]);
+    D.line(g, c1, h * .012, [x + h * .21, base - h * .93, x + h * .27, base - h * .985]);
+    D.star(g, c1, x + h * .27, base - h * .985, h * .03); },
+  star(g, c, x, y, r){ g.beginPath(); for(let i = 0; i < 10; i++){ const a = i / 10 * TAU - Math.PI / 2, rr = i % 2 ? r * .45 : r; g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } g.closePath(); g.fillStyle = c; g.fill(); },
+  crowd(g, x0, x1, base, n, hmin, hmax, c, seed){ const r = rng(seed);
+    for(let i = 0; i < n; i++){ const x = x0 + (x1 - x0) * (i + r()) / n, hh = hmin + (hmax - hmin) * r(), hr = .085 + r() * .03;
+      D.ell(g, c, x, base - hh + hr, hr * .9, hr); D.rrf(g, c, x - hr * 1.7, base - hh + hr * 1.9, hr * 3.4, hh, hr * 1.2);
+      if(r() < .35) D.line(g, c, .05, [x + hr * 1.3, base - hh + hr * 2.4, x + hr * 2.3, base - hh - hr * 1.2]); } },
+  weed(g, w, h, c, seed){ const r = rng(seed);
+    for(let i = 0; i < 5; i++){ const x = w * (.2 + .6 * r()), hh = h * (.55 + .45 * r()), b = (r() - .5) * .6;
+      g.beginPath(); g.moveTo(x - .05, h); g.bezierCurveTo(x + b - .1, h - hh * .4, x - b, h - hh * .7, x + b * .5, h - hh);
+      g.bezierCurveTo(x - b + .06, h - hh * .7, x + b, h - hh * .4, x + .05, h); g.closePath(); g.fillStyle = c; g.fill(); } },
+  letter(g, w, h){ D.rrf(g, '#fbf7ee', 0, 0, w, h, .02); for(let i = 0; i < 4; i++) D.rect(g, 'rgba(70,80,130,.55)', w * .12, h * .2 + i * h * .16, w * (i === 3 ? .4 : .76), h * .035); D.ell(g, '#d8544c', w * .8, h * .8, w * .05, w * .05); },
+  bed(g, w, o){ D.rrf(g, o.head, .1, 0, w - .2, 1.05, .25);
+    o.pillows.forEach(p => D.ell(g, o.pillow, p, .74, .5, .2));
+    (o.sleepers || []).forEach(s => { D.ell(g, s.hair, s.x + .04, .64, s.r * 1.7, s.r * 1.1); D.ell(g, s.face, s.x - .02, .67, s.r * .9, s.r); });
+    D.rect(g, o.matt, 0, .95, w, .65);
+    g.beginPath(); g.moveTo(o.bx, 1.6); g.lineTo(o.bx, .92); g.bezierCurveTo(o.bx + .2, .7, w * .55, .66, w - .1, .8); g.lineTo(w, 1.6); g.closePath(); g.fillStyle = o.blanket; g.fill(); }
+};
+
+/* 오려낸 종이의 흰 단면, 결, 음영을 입힘 */
+function finishPaper(cv, g, rimColor, rimPx){
+  const w = cv.width, h = cv.height, t = mk(w, h), tg = t.getContext('2d');
+  tg.drawImage(cv, 0, 0); tg.globalCompositeOperation = 'source-in'; tg.fillStyle = rimColor; tg.fillRect(0, 0, w, h);
+  g.save(); g.globalCompositeOperation = 'destination-over';
+  [rimPx * .5, rimPx].forEach(rp => { for(let a = 0; a < 8; a++) g.drawImage(t, Math.cos(a * Math.PI / 4) * rp, Math.sin(a * Math.PI / 4) * rp); });
+  g.globalCompositeOperation = 'source-atop'; g.fillStyle = g.createPattern(grainCv, 'repeat'); g.fillRect(0, 0, w, h);
+  const q = g.createLinearGradient(0, 0, 0, h); q.addColorStop(0, 'rgba(255,255,255,.05)'); q.addColorStop(1, 'rgba(0,0,0,.16)'); g.fillStyle = q; g.fillRect(0, 0, w, h);
+  g.restore();
+}
+
+/* 펼침면 바닥 그림용 도구 (10 × 7 단위) */
+const G = {
+  fill(g, c){ g.fillStyle = c; g.fillRect(0, 0, 10, 7); },
+  wash(g, x, y, rx, ry, c, a){ g.save(); g.globalAlpha = a ?? 1; g.translate(x, y); g.scale(rx, ry); const q = g.createRadialGradient(0, 0, 0, 0, 0, 1); q.addColorStop(0, hexA(c, 1)); q.addColorStop(1, hexA(c, 0)); g.fillStyle = q; g.beginPath(); g.arc(0, 0, 1, 0, TAU); g.fill(); g.restore(); },
+  boards(g, c, gap){ g.strokeStyle = c; g.lineWidth = .018; for(let y = gap; y < 7; y += gap){ g.beginPath(); g.moveTo(0, y); g.lineTo(10, y); g.stroke(); } },
+  dots(g, c, n, seed, x0, y0, x1, y1, r0, r1){ const r = rng(seed); g.fillStyle = c; for(let i = 0; i < n; i++){ g.beginPath(); g.arc(x0 + (x1 - x0) * r(), y0 + (y1 - y0) * r(), r0 + (r1 - r0) * r(), 0, TAU); g.fill(); } },
+  ripples(g, c, n, seed, y1){ const r = rng(seed); g.strokeStyle = c; g.lineWidth = .022; for(let i = 0; i < n; i++){ const x = r() * 10, y = r() * (y1 || 5.6), l = .3 + r() * .9; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + l / 2, y - .05, x + l, y); g.stroke(); } },
+  clear(g, fn){ g.save(); g.globalCompositeOperation = 'destination-out'; g.fillStyle = '#000'; fn(); g.restore(); }
+};
+
+/* =========================================================
+   장면 데이터 (14장)
+   좌표: x -5~5 (책등 0), z -3.5(안쪽)~3.5(앞쪽), 조각은 z 위치에 서는 종이
+   ========================================================= */
+const letterAnim = (ph) => (pc, t) => { pc.hinge.position.y = pc.base.y + Math.sin(t * .8 + ph) * .08; pc.mesh.rotation.z = Math.sin(t * .6 + ph) * .12; };
+const swayAnim = (amp, sp, ph) => (pc, t) => { pc.mesh.rotation.z = Math.sin(t * sp + ph) * amp; };
+const trio = (c1, c2) => (g, w, h) => {
+  D.person(g, .6, h, 2.25, { kind:'man', coat:true, hat:true, color:c1, dir:1 });
+  D.person(g, 1.45, h, 1.38, { kind:'child', pose:'hold', color:c2 });
+  D.teddy(g, 2.03, h, .55, '#6b4b30', '#a7825a');
+};
+
+const SC = [
+/* 1 */ {
+  title:'물에 잠긴 세상', line:'바다가 도시를 삼킨 뒤에도, 사람들은 사랑을 꿈꾸었어요.',
+  narr:['먼 훗날, 극지의 얼음이 녹아 바다가 해안의 도시들을 삼켜 버렸어요.',
+        '살아남은 사람들은 아이를 마음대로 가질 수 없게 되었고, 대신 지치지도 먹지도 않는 기계, 메카를 곁에 두었지요.',
+        '그러던 어느 날, 한 과학자가 조용히 꿈을 꾸었어요.',
+        '진짜로 사랑할 줄 아는 아이를 만들 수 있다면, 하고요.'],
+  mood:{ root:50, mode:'minor', prog:[0,5,3,6], bar:9, beat:.75, bright:700, rest:.42 },
+  look:{ bg:'#0c1422', hemi:['#8fa7c4','#141c28',.55], key:['#cfe0ff',1.05,[-6,9,5]], p1:['#ffb56b',1.3,[1.6,1.6,-1],8], p2:['#6fb3ff',.7,[-3,3,2],7], dust:['#cfe3ff',4.5,-.45,.25,.45] },
+  ground(g){ G.fill(g, '#a9bcc4'); G.wash(g, 5, 3, 5.5, 3.2, '#5d879c', .9); G.ripples(g, 'rgba(235,245,250,.55)', 70, 4); },
+  pieces:[
+    { x:0, z:-3, w:9.6, h:4.8, draw(g, w, h){
+        D.arch(g, w, h, D.lg(g, 0, 0, 0, h, [[0,'#243450'],[.5,'#62799a'],[.82,'#aebdca'],[1,'#c6cfd4']]));
+        D.atop(g, () => { D.ell(g, 'rgba(255,238,214,.9)', w * .25, h * .64, .46, .46);
+          for(let i = 0; i < 8; i++) D.ell(g, 'rgba(36,52,78,.26)', w * (.06 + i * .13), h * (.26 + (i % 3) * .11), 1.3, .12); }); },
+      glow(g, w, h){ D.ell(g, D.rg(g, w * .25, h * .64, 0, 1, [[0,'#ffe0b8'],[1,'rgba(0,0,0,0)']]), w * .25, h * .64, 1, 1); }, ei:.9 },
+    { x:0, z:-2.2, w:9, h:2.6, d:.15, draw(g, w, h, S){ S.win = D.skyline(g, 0, w, h, { hmin:.8, hmax:2.4, wmin:.35, wmax:.8, c:'#56697f', seed:3, win:.05, lit:'#e8d2a8' }); },
+      glow(g, w, h, S){ D.wins(g, S.win, '#ffd9a0'); }, ei:1.2 },
+    { x:-.4, z:-1.1, w:7.6, h:3.3, d:.3, draw(g, w, h, S){ S.win = D.skyline(g, 0, w, h, { hmin:1.2, hmax:3.2, wmin:.45, wmax:1, c:'#2b394c', seed:9, win:.1, lit:'#ffc47a' }); },
+      glow(g, w, h, S){ D.wins(g, S.win, '#ffb866'); }, ei:1.5 },
+    { x:3.1, z:.3, w:1.5, h:2.7, d:.45, draw(g, w, h){ g.save(); g.translate(w / 2, h); g.rotate(.09);
+        D.rrf(g, '#1f2a3a', -.45, -2.4, .9, 2.45, .04); D.rrf(g, '#1f2a3a', -.3, -2.58, .6, .22, .03); D.rect(g, '#1f2a3a', -.03, -2.7, .06, .14);
+        for(let j = 0; j < 8; j++) for(let i = 0; i < 3; i++) if((i + j) % 3 !== 1) D.rect(g, j % 4 === 1 ? '#ffc47a' : '#34445a', -.32 + i * .25, -2.25 + j * .27, .12, .14);
+        g.restore(); } },
+    { x:-1.7, z:1.4, y0:.86, w:.9, h:.62, d:.9, draw(g){ D.poly(g, '#f4efe4', [.05,.42,.85,.42,.7,.6,.2,.6]); D.poly(g, '#e2dac8', [.45,.04,.45,.4,.14,.4]); D.poly(g, '#fbf7ee', [.47,.08,.47,.4,.76,.4]); },
+      anim(pc, t){ pc.hinge.position.y = pc.base.y + Math.sin(t * 1.3) * .03; pc.mesh.rotation.z = Math.sin(t * 1.1) * .06; } }
+  ],
+  water:[{ x:0, z:-.65, w:10, d:5.7, level:.85, c:'#3b6f88', op:.6 }],
+  glows:[{ x:-2.4, y:3.2, z:-3.05, s:3.2, c:'#ffd9a8', op:.45 }]
+},
+/* 2 */ {
+  title:'하얀 빛 속의 아이', line:'문이 열리고, 빛 속에서 한 아이가 걸어 나왔어요.',
+  narr:['헨리와 모니카의 아들 마틴은 고칠 수 없는 병 때문에 차가운 캡슐 속에서 긴 잠을 자고 있었어요.',
+        '깊은 슬픔에 잠긴 모니카를 위해, 어느 날 헨리는 한 아이를 집으로 데려왔지요.',
+        '눈부신 빛 속에서 걸어 나온 그 아이의 이름은 데이비드.',
+        '사랑하도록 만들어진, 세상에서 가장 처음 태어난 아이 메카였어요.'],
+  mood:{ root:53, mode:'lydian', prog:[0,1,0,4], bar:8, beat:.6, bright:1100, rest:.45 },
+  look:{ bg:'#11111b', hemi:['#e8e6f2','#24222c',.5], key:['#fff4e6',.95,[4,8,6]], p1:['#ffffff',2.6,[0,2,-2.4],7], p2:['#8ad0ff',1.1,[3.2,1,1],4], dust:['#ffffff',4,.12,.35,.55] },
+  ground(g){ G.fill(g, '#d3cedb'); G.wash(g, 5, 3.2, 5.4, 3.4, '#aaa2bd', .7); G.boards(g, 'rgba(120,110,140,.25)', .45);
+    G.clear(g, () => { g.globalAlpha = .8; g.beginPath(); g.moveTo(4.4, .7); g.lineTo(5.6, .7); g.lineTo(6.6, 4.4); g.lineTo(3.4, 4.4); g.closePath(); g.fill(); }); },
+  pieces:[
+    { x:0, z:-3.25, w:2.2, h:3.3, rim:'#ffffff', draw(g, w, h){ D.back(g, w, h, D.lg(g, 0, 0, 0, h, [[0,'#f4f8ff'],[1,'#ffffff']]), .1); },
+      glow(g, w, h){ D.rect(g, '#e8f0ff', 0, 0, w, h); }, ei:1.4 },
+    { x:0, z:-2.85, w:9.4, h:4.4, d:.08, draw(g, w, h){
+        D.back(g, w, h, D.lg(g, 0, 0, 0, h, [[0,'#c9c4d4'],[1,'#e6e2ec']]));
+        D.atop(g, () => { D.rect(g, 'rgba(110,100,135,.2)', 0, h * .74, w, .05);
+          D.rrf(g, '#aab3cc', w * .74, h * .2, 1.7, 1.8, .06); for(let i = 0; i < 9; i++) D.rect(g, 'rgba(240,244,255,.55)', w * .74 + .08, h * .2 + .12 + i * .18, 1.54, .05);
+          D.rect(g, '#9990a8', w * .16 - .01, 0, .02, h * .3 - .26); D.ell(g, '#f7f3ea', w * .16, h * .3, .28, .28); });
+        D.cut(g, () => g.fillRect(w / 2 - .6, h - 2.9, 1.2, 2.9));
+        g.strokeStyle = '#a9a2bb'; g.lineWidth = .07; g.strokeRect(w / 2 - .64, h - 2.94, 1.28, 2.98); } },
+    { x:0, z:-2.6, w:.8, h:1.6, d:.55, draw(g, w, h){ D.person(g, w / 2, h, 1.55, { kind:'child', color:'#2c3046' }); } },
+    { x:-2.7, z:.8, w:2.2, h:2.6, d:.3, draw(g, w, h){ D.person(g, .65, h, 2.5, { kind:'man', color:'#4a4039', dir:1 }); D.person(g, 1.55, h, 2.28, { kind:'woman', color:'#83394a', pose:'hold', dir:1 }); } },
+    { x:3.1, z:.1, w:2, h:1.15, d:.4, draw(g, w, h){ D.rrf(g, '#3c4458', .35, h - .35, 1.3, .35, .05);
+        D.rrf(g, D.lg(g, 0, .1, 0, .85, [[0,'#d8f1ff'],[1,'#7cb9dc']]), .05, .1, 1.9, .72, .36);
+        D.ell(g, '#4a7897', .5, .46, .12, .12); D.rrf(g, '#4a7897', .6, .38, 1.0, .18, .09); },
+      glow(g){ D.rrf(g, '#3a8ab8', .05, .1, 1.9, .72, .36); }, ei:.9 },
+    { x:-4.3, z:1.7, w:.9, h:1.8, d:.6, draw(g, w, h){ D.rrf(g, '#6b5a4a', .25, h - .45, .4, .45, .05);
+        for(let i = 0; i < 7; i++){ const a = -1.3 + i * .43; D.ell(g, '#4d6656', .45 + Math.sin(a) * .28, h - .78 - Math.cos(a) * .42, .09, .36, a); } } }
+  ],
+  glows:[{ x:0, y:1.5, z:-3.1, s:5, c:'#ffffff', op:.75 }, { x:3.1, y:.55, z:.25, s:2, c:'#7fd2ff', op:.45 }],
+  beams:[{ from:[0,.02,-2.8], to:[0,.02,.9], w:1.2, spread:2, c:'#ffffff', op:.26, flat:true }]
+},
+/* 3 */ {
+  title:'일곱 개의 단어', line:'한번 새겨진 사랑은 되돌릴 수 없었어요.',
+  narr:['처음에 모니카는 기계 아이가 낯설고, 조금은 두려웠어요.',
+        '하지만 며칠 뒤, 그녀는 데이비드의 마음을 영원히 자신에게 묶어 둘 일곱 개의 단어를 천천히 읽어 주었어요.',
+        '단어 하나하나가 작은 불빛처럼 아이의 마음속에 켜졌지요.',
+        '그 순간부터 데이비드는 그녀를 엄마라고 불렀어요.',
+        '한번 새겨진 사랑은, 다시는 되돌릴 수 없었답니다.'],
+  mood:{ root:48, mode:'major', prog:[0,5,3,4], bar:8, beat:.5, bright:1300, rest:.35 },
+  look:{ bg:'#19110d', hemi:['#ffd9b0','#2a1a12',.45], key:['#ffcf94',.95,[-5,7,5]], p1:['#ffae5c',1.8,[-3.2,2.5,-.3],7], p2:['#bfe4ff',1.3,[0,2.2,.4],4], dust:['#ffd7a0',4.5,.1,.4,.55] },
+  ground(g){ G.fill(g, '#c9a27a'); G.boards(g, 'rgba(90,50,20,.25)', .38); G.wash(g, 5, 3.9, 3, 1.3, '#a4574a', .85);
+    g.strokeStyle = 'rgba(250,220,170,.5)'; g.lineWidth = .03; g.beginPath(); g.ellipse(5, 3.9, 2.3, .95, 0, 0, TAU); g.stroke(); },
+  pieces:[
+    { x:0, z:-2.9, w:9.4, h:4.3, draw(g, w, h, S){
+        D.back(g, w, h, D.lg(g, 0, 0, 0, h, [[0,'#b98552'],[1,'#dcb07a']]));
+        D.atop(g, () => { for(let i = 0; i < 24; i++) D.rect(g, 'rgba(120,70,30,.1)', i * .4, 0, .12, h);
+          D.window(g, w * .56, h * .14, 2.2, 2.1, '#e9d2a8', D.lg(g, 0, h * .14, 0, h * .14 + 2, [[0,'#101a33'],[1,'#27365a']]), .1);
+          D.stars(g, 2, 1.4, 0, 1, '#fff', .01); S.lights = []; const r = rng(8); for(let i = 0; i < 26; i++) S.lights.push([w * .56 + .15 + r() * 1.9, h * .14 + 1.2 + r() * .8]);
+          S.lights.forEach(p => D.ell(g, '#ffd58a', p[0], p[1], .018, .018));
+          D.rect(g, '#e9d2a8', w * .56 + 1.07, h * .14, .06, 2.1); D.rect(g, '#e9d2a8', w * .56, h * .14 + 1.02, 2.2, .06);
+          D.rrf(g, '#6b4428', w * .12, h * .2, .9, .7, .03); D.rrf(g, '#e7d3b0', w * .12 + .08, h * .2 + .08, .74, .54, .02);
+          D.rrf(g, '#6b4428', w * .28, h * .25, .6, .8, .03); D.rrf(g, '#cfb28a', w * .28 + .07, h * .25 + .07, .46, .66, .02); }); },
+      glow(g, w, h, S){ S.lights.forEach(p => D.ell(g, '#ffcf80', p[0], p[1], .025, .025)); }, ei:1.5 },
+    { x:2, z:-1.6, w:3.4, h:1.3, d:.25, draw(g){ D.rrf(g, '#6d3a30', .15, .1, 3.1, .8, .18); D.rrf(g, '#7c4538', 0, .55, 3.4, .55, .15);
+        D.rrf(g, '#5e3128', 0, .35, .4, .95, .15); D.rrf(g, '#5e3128', 3.0, .35, .4, .95, .15); D.rect(g, '#3b1f18', .2, 1.18, .08, .12); D.rect(g, '#3b1f18', 3.1, 1.18, .08, .12); } },
+    { x:-3.3, z:-.5, w:1, h:3.1, d:.35, draw(g, w, h){ D.rect(g, '#3a2a20', w / 2 - .025, .55, .05, h - .6); D.ell(g, '#3a2a20', w / 2, h - .05, .28, .05); D.poly(g, '#f3d7a0', [.2,.62,.8,.62,.68,.08,.32,.08]); },
+      glow(g){ D.poly(g, '#ffbf70', [.2,.62,.8,.62,.68,.08,.32,.08]); }, ei:1.1 },
+    { x:-.95, z:.2, w:1.5, h:1.9, d:.5, draw(g, w, h){ D.person(g, .7, h, 1.75, { kind:'woman', pose:'kneel', arms:'out', color:'#7a2f3f', dir:1 }); } },
+    { x:.85, z:.25, w:1, h:1.6, d:.6, draw(g, w, h){ D.person(g, .5, h, 1.5, { kind:'child', color:'#2f3a55', dir:-1 }); } },
+    { x:3.7, z:1.7, w:1.2, h:.95, d:.7, draw(g){ D.rrf(g, '#5a3a26', .05, .35, 1.1, .1, .03); D.rect(g, '#5a3a26', .15, .42, .07, .53); D.rect(g, '#5a3a26', .98, .42, .07, .53);
+        D.rrf(g, '#8a2e2e', .25, .2, .6, .15, .02); D.rrf(g, '#2e4a6a', .3, .06, .5, .14, .02); } }
+  ],
+  glows: Array.from({ length:7 }, (_, i) => ({ x:-.72 + i * .24, y:2.0 + Math.sin(i / 6 * Math.PI) * .45, z:.3, s:.55, c:'#d6ecff', op:.95, seq:1.6 + i * .9, pulse:1.4 }))
+          .concat([{ x:-3.3, y:2.75, z:-.45, s:2.4, c:'#ffc070', op:.6 }])
+},
+/* 4 */ {
+  title:'테디', line:'햇살이 기울 때마다, 데이비드는 엄마에게 편지를 썼어요.',
+  narr:['모니카는 마틴이 아끼던 낡은 슈퍼토이, 테디를 데이비드에게 건네주었어요.',
+        '테디는 말수가 적었지만, 언제나 데이비드 곁을 지키는 다정한 친구였지요.',
+        '햇살이 기울 때면 데이비드는 서툰 글씨로 엄마에게 편지를 썼어요.',
+        '엄마를 사랑한다고, 그리고 엄마도 자신을 사랑해 주면 좋겠다고요.'],
+  mood:{ root:55, mode:'major', prog:[0,3,4,0], bar:7, beat:.45, bright:1500, rest:.3 },
+  look:{ bg:'#16120e', hemi:['#fff0d6','#3a2a1a',.55], key:['#ffe2b0',1.25,[6,7,1]], p1:['#ffd08a',1,[2.6,2.2,-1.5],8], p2:['#fff6e0',.5,[-2,2,1.5],6], dust:['#fff0c8',5,.07,.5,.7] },
+  ground(g){ G.fill(g, '#dcbd90'); G.boards(g, 'rgba(120,80,40,.28)', .4);
+    G.clear(g, () => { g.globalAlpha = .55; g.beginPath(); g.moveTo(6.2, 1); g.lineTo(8.6, 1); g.lineTo(7.4, 4.6); g.lineTo(4.6, 4.6); g.closePath(); g.fill(); });
+    ['#c0504a','#5a8ac0','#e0b040','#6aa07a'].forEach((c, i) => { g.fillStyle = c; g.save(); g.translate(1.6 + i * .5, 4.4 + (i % 2) * .3); g.rotate(i * .5); g.fillRect(-.12, -.12, .24, .24); g.restore(); }); },
+  pieces:[
+    { x:0, z:-2.9, w:9.4, h:4.4, draw(g, w, h){
+        D.back(g, w, h, D.lg(g, 0, 0, 0, h, [[0,'#d6dde0'],[1,'#efe9dc']]));
+        D.atop(g, () => { const x = w * .6, y = h * .12;
+          D.window(g, x, y, 3.2, 2.6, '#fbf6ea', D.lg(g, 0, y, 0, y + 2.6, [[0,'#bfe0f0'],[1,'#f6f0d8']]), .1);
+          D.ell(g, '#fff6d8', x + 2.3, y + .8, .35, .35);
+          [[.5,'#8fb08a'],[1.2,'#7aa07a'],[1.9,'#8fb08a'],[2.7,'#7aa07a']].forEach(([dx, c]) => D.ell(g, c, x + dx, y + 2.35, .55, .35));
+          D.rect(g, '#fbf6ea', x + 1.57, y, .07, 2.6); D.rect(g, '#fbf6ea', x, y + 1.27, 3.2, .07);
+          for(let i = 0; i < 30; i++) D.ell(g, 'rgba(160,150,170,.25)', .3 + (i % 10) * .5, .4 + Math.floor(i / 10) * .9, .04, .04); }); },
+      glow(g, w, h){ D.rrf(g, '#8a7a5a', w * .6 + .1, h * .12 + .1, 3, 2.4, .02); }, ei:.6 },
+    { x:-3, z:-1.4, w:2.6, h:2.4, d:.2, draw(g, w, h){
+        D.rect(g, '#9a6a42', .05, 0, .1, h); D.rect(g, '#9a6a42', w - .15, 0, .1, h);
+        [.75, 1.5, 2.25].forEach(y => D.rect(g, '#9a6a42', 0, y, w, .08));
+        D.rrf(g, '#6a8ab0', .35, .35, .3, .4, .04); D.ell(g, '#6a8ab0', .5, .27, .12, .1); D.poly(g, '#c0504a', [1.05,.75,1.35,.75,1.2,.2]);
+        D.ell(g, '#e0b040', 1.8, .58, .17, .17); D.poly(g, '#6aa07a', [.3,1.5,.8,1.5,.8,1.18,.55,.98,.3,1.18]);
+        ['#b04a4a','#4a6ab0','#d8a040','#5a9a6a','#8a5ab0'].forEach((c, i) => D.rect(g, c, 1.2 + i * .2, 1.12, .16, .38));
+        D.teddy(g, .6, 2.25, .6, '#b58a5a', '#e0c8a0'); D.rrf(g, '#c0504a', 1.3, 1.95, .6, .3, .05); } },
+    { x:.9, z:.2, w:2.4, h:1.75, d:.45, draw(g, w, h){
+        D.rrf(g, '#a4764c', 1.0, 1.0, 1.35, .09, .03); D.rect(g, '#8a603a', 1.1, 1.05, .07, .7); D.rect(g, '#8a603a', 2.18, 1.05, .07, .7);
+        D.rect(g, '#fbf7ee', 1.35, .95, .5, .06);
+        D.person(g, .62, h, 1.45, { kind:'child', pose:'out', dir:1, color:'#34405e' }); } },
+    { x:-.9, z:.9, w:1, h:1.1, d:.6, draw(g, w, h){ D.teddy(g, .5, h, 1.05, '#9a6a3c', '#d8b58a'); } },
+    { x:-.1, z:.6, y0:1.7, w:.55, h:.4, d:1.0, draw(g, w, h){ D.letter(g, w, h); }, anim:letterAnim(0) },
+    { x:1.2, z:1.1, y0:2.2, w:.55, h:.4, d:1.15, draw(g, w, h){ D.letter(g, w, h); }, anim:letterAnim(2) },
+    { x:2.1, z:.3, y0:2.6, w:.55, h:.4, d:1.3, draw(g, w, h){ D.letter(g, w, h); }, anim:letterAnim(4) }
+  ],
+  beams:[{ from:[3.2,3.4,-2.8], to:[1.2,0,.6], w:.9, spread:2.4, c:'#fff1c8', op:.22 }, { from:[3.9,3.2,-2.8], to:[2.4,0,1.2], w:.7, spread:2.4, c:'#fff1c8', op:.16 }],
+  glows:[{ x:3.2, y:2.7, z:-2.85, s:4, c:'#fff2cc', op:.22 }]
+},
+/* 5 */ {
+  title:'달빛과 가위', line:'금빛 머리카락 한 가닥이 달빛 아래 반짝였어요.',
+  narr:['기적처럼 마틴이 깨어나 집으로 돌아왔어요.',
+        '진짜 아들이 돌아오자, 데이비드의 자리는 조금씩 흔들리기 시작했지요.',
+        '마틴의 부추김에 넘어간 데이비드는, 달빛이 비치는 밤 엄마의 머리카락 한 가닥을 몰래 잘랐어요.',
+        '그러면 엄마가 자신을 더 사랑해 줄 거라고 믿었거든요.',
+        '가위 소리에 눈을 뜬 엄마의 얼굴에는 놀람과 두려움이 번졌어요.',
+        '그 작은 금빛 머리카락은, 테디가 오래도록 몰래 간직하게 된답니다.'],
+  mood:{ root:50, mode:'dorian', prog:[0,3,0,6], bar:9, beat:.8, bright:650, rest:.45 },
+  look:{ bg:'#0a0e1b', hemi:['#7c8fc8','#0e111c',.35], key:['#9fb6ff',.85,[5,8,-3]], p1:['#dfe8ff',1.2,[2.6,3.2,-2.2],7], p2:['#ffcf70',1.1,[.8,1.5,.8],3.2], dust:['#bcd0ff',3.5,.05,.3,.5] },
+  ground(g){ G.fill(g, '#5a6890'); G.wash(g, 5, 3, 5.4, 3.2, '#2e3a60', .8);
+    G.clear(g, () => { g.globalAlpha = .45; g.beginPath(); g.moveTo(6.6, 1.4); g.lineTo(8.4, 1.4); g.lineTo(7.8, 4.2); g.lineTo(5.6, 4.2); g.closePath(); g.fill(); }); },
+  pieces:[
+    { x:0, z:-2.9, w:9.4, h:4.3, draw(g, w, h){
+        D.back(g, w, h, D.lg(g, 0, 0, 0, h, [[0,'#1b2745'],[1,'#2a3a60']]));
+        D.atop(g, () => { const x = w * .62, y = h * .1;
+          D.rrf(g, '#23315a', x - .45, 0, .5, h * .78, .1); D.rrf(g, '#23315a', x + 2.55, 0, .5, h * .78, .1);
+          D.window(g, x, y, 2.6, 2.6, '#3a4a78', D.lg(g, 0, y, 0, y + 2.6, [[0,'#0c1430'],[1,'#1a2750']]), .09);
+          g.save(); g.beginPath(); g.rect(x + .1, y + .1, 2.4, 2.4); g.clip(); D.stars(g, w, h, 60, 2, '#dfe6ff'); g.restore();
+          D.ell(g, '#e8edff', x + 1.3, y + .95, .42, .42);
+          D.rect(g, '#3a4a78', x + 1.27, y, .06, 2.6); D.rect(g, '#3a4a78', x, y + 1.6, 2.6, .06); }); },
+      glow(g, w, h){ D.ell(g, '#d8e2ff', w * .62 + 1.3, h * .1 + .95, .42, .42); }, ei:1.2 },
+    { x:-3.8, z:-1.8, w:1.5, h:3.0, d:.2, draw(g, w, h){ D.rect(g, '#141d36', 0, 0, w, h);
+        D.rect(g, D.lg(g, 0, 0, 0, h, [[0,'#ffd9a0'],[1,'#e8a860']]), .2, .25, .8, h - .25);
+        D.person(g, .62, h, 1.55, { kind:'child', color:'#1c1f2e', dir:1 }); D.poly(g, '#26304f', [1.0,.25,1.35,.1,1.35,h,1.0,h]); },
+      glow(g, w, h){ D.rect(g, '#ffb766', .2, .25, .8, h - .25); }, ei:.9 },
+    { x:-.6, z:-.9, w:4.2, h:1.6, d:.35, draw(g, w){
+        D.bed(g, w, { head:'#34294a', pillow:'#c7cfe8', pillows:[1.25], matt:'#2e3b66', blanket:'#46579a', bx:.75, sleepers:[{ x:1.2, r:.21, hair:'#caa25a', face:'#e6d3bf' }] }); } },
+    { x:1.35, z:.65, w:1.1, h:1.65, d:.55, draw(g, w, h){ const hd = D.person(g, .6, h, 1.5, { kind:'child', pose:'reach', dir:-1, color:'#243050' });
+        D.ell(g, '#d7deec', hd[0] - .04, hd[1] - .05, .05, .03, .5); D.ell(g, '#d7deec', hd[0] - .04, hd[1] + .04, .05, .03, -.5); D.line(g, '#d7deec', .02, [hd[0] - .04, hd[1], hd[0] - .2, hd[1] - .06]); } }
+  ],
+  glows:[{ x:2.6, y:3.35, z:-2.85, s:3, c:'#e6eeff', op:.55 }, { x:.86, y:1.45, z:.72, s:.6, c:'#ffd27a', op:.9, pulse:2.2 }, { x:-3.8, y:1.3, z:-1.75, s:2, c:'#ffb766', op:.5 }]
+},
+/* 6 */ {
+  title:'물속의 밤', line:'모두가 떠난 물 밑에서, 아이는 조용히 위를 올려다보았어요.',
+  narr:['마틴의 생일, 수영장 곁에 모인 아이들은 데이비드를 둘러싸고 짓궂게 시험했어요.',
+        '겁에 질린 데이비드는 마틴에게 매달렸고, 둘은 함께 물속으로 떨어지고 말았지요.',
+        '어른들은 허우적대는 마틴을 서둘러 건져 올렸어요.',
+        '그리고 물 밑바닥에는, 아무도 돌아보지 않은 데이비드만이 조용히 가라앉아 있었답니다.'],
+  mood:{ root:45, mode:'minor', prog:[0,5,6,4], bar:8, beat:.7, bright:800, rest:.4 },
+  look:{ bg:'#06111a', hemi:['#5fb6d6','#06131b',.4], key:['#a8d8ff',.7,[-4,8,4]], p1:['#3fd7ff',2.4,[.3,.3,.6],6], p2:['#ffc36a',1.3,[-2,3.2,-2.2],8], dust:['#aeefff',4.5,.5,.12,.55] },
+  ground(g){ G.fill(g, '#b4ae9f'); G.wash(g, 5, 3.2, 5.5, 3.2, '#7d7a70', .5);
+    D.rect(g, '#2f93b8', 2.5, 2.3, 5.6, 3.6); g.strokeStyle = 'rgba(200,240,250,.45)'; g.lineWidth = .02;
+    for(let x = 2.5; x <= 8.1; x += .35){ g.beginPath(); g.moveTo(x, 2.3); g.lineTo(x, 5.9); g.stroke(); }
+    for(let y = 2.3; y <= 5.9; y += .35){ g.beginPath(); g.moveTo(2.5, y); g.lineTo(8.1, y); g.stroke(); } },
+  pieces:[
+    { x:0, z:-3, w:9.6, h:4.3, draw(g, w, h, S){
+        D.arch(g, w, h, D.lg(g, 0, 0, 0, h, [[0,'#0a1826'],[1,'#1a3448']]));
+        D.atop(g, () => { D.stars(g, w, h * .5, 50, 6, '#cfe6ff');
+          [.4,1.3,2.2,6.4,8.8].forEach((x, i) => D.tree(g, x, h, 2.4 + (i % 2) * .6, '#08131c', i + 2));
+          D.rect(g, '#0f1c28', 3.2, h - 2.2, 2.8, 2.2); D.poly(g, '#0f1c28', [3,h - 2.2,4.6,h - 3,6.2,h - 2.2]);
+          S.win = [[3.5,h - 1.8,.4,.5],[4.2,h - 1.8,.4,.5],[5.2,h - 1.8,.5,.5],[3.5,h - 1,.4,.5],[5.2,h - 1,.5,.5]];
+          S.win.forEach(p => D.rect(g, '#ffcf8a', p[0], p[1], p[2], p[3]));
+          g.strokeStyle = '#2a3a4a'; g.lineWidth = .02; g.beginPath(); g.moveTo(0, h * .38); g.quadraticCurveTo(w / 2, h * .62, w, h * .38); g.stroke(); }); },
+      glow(g, w, h, S){ S.win.forEach(p => D.rect(g, '#ffb866', p[0], p[1], p[2], p[3])); }, ei:1.3 },
+    { x:0, z:-2, w:8.6, h:1.9, d:.2, draw(g, w, h){
+        [['man',1.75],['child',1.1],['woman',1.6],['child',1.0],['man',1.82],['woman',1.55],['child',1.15],['man',1.7]].forEach(([k, hh], i) =>
+          D.person(g, .5 + i * 1.08, h, hh, { kind:k, color:'#12202c', pose:i % 3 === 0 ? 'hold' : i === 5 ? 'wave' : 'stand', dir:i % 2 ? 1 : -1 })); } },
+    { x:.3, z:-1.2, w:5.6, h:1.3, d:.3, draw(g, w, h){ poolWall(g, w, h); } },
+    { x:-2.5, z:.6, yaw:Math.PI / 2, w:3.6, h:1.3, d:.35, draw(g, w, h){ poolWall(g, w, h); } },
+    { x:3.1, z:.6, yaw:-Math.PI / 2, w:3.6, h:1.3, d:.35, draw(g, w, h){ poolWall(g, w, h); } },
+    { x:.5, z:.7, y0:.08, w:1.1, h:1.1, d:.6, draw(g, w, h){ D.person(g, w / 2, h, 1.02, { kind:'child', pose:'open', color:'#2d4b6e' }); },
+      anim(pc, t){ pc.mesh.rotation.z = Math.sin(t * .5) * .08; pc.hinge.position.y = pc.base.y + Math.sin(t * .7) * .04; } },
+    { x:-3.95, z:1.0, w:1.3, h:2.5, d:.5, draw(g, w, h){ D.person(g, .55, h, 2.35, { kind:'man', pose:'hold', color:'#1a2733' });
+        D.rrf(g, '#1a2733', .25, 1.02, .9, .22, .1); D.ell(g, '#1a2733', 1.12, .98, .12, .12); D.line(g, '#1a2733', .06, [.3, 1.15, .18, 1.45]); } }
+  ],
+  water:[{ x:.3, z:.6, w:5.6, d:3.6, level:1.25, c:'#1a9ac2', op:.5 }],
+  glows: Array.from({ length:9 }, (_, i) => { const x = -4 + i; return { x, y:3.25 - Math.sin((x + 4.8) / 9.6 * Math.PI) * 1.05, z:-2.9, s:.42, c:'#ffc56e', op:.85, flicker:1 }; })
+          .concat([{ x:.3, y:.55, z:.6, s:3.2, c:'#3fd7ff', op:.45 }])
+},
+/* 7 */ {
+  title:'숲에 남겨진 아이', line:'붉은 불빛이 안개 속으로 멀어져 갔어요.',
+  narr:['위험한 아이라는 이유로, 데이비드는 만들어진 곳으로 돌려보내져 폐기될 처지가 되었어요.',
+        '차마 그럴 수 없었던 모니카는 그를 깊은 숲으로 데려가 홀로 내려두었지요.',
+        '데이비드는 울며 매달렸지만, 자동차의 붉은 불빛은 안개 속으로 멀어져 갔어요.',
+        '테디와 단둘이 남은 숲에서, 데이비드는 엄마가 읽어 주던 피노키오 이야기를 떠올렸어요.',
+        '푸른 요정을 찾으면, 자신도 진짜 아이가 될 수 있을지 모른다고요.'],
+  mood:{ root:45, mode:'minor', prog:[0,3,5,4], bar:10, beat:1.0, bright:550, rest:.5 },
+  look:{ bg:'#0d1411', fog:.7, hemi:['#9cb8a8','#0b110f',.38], key:['#dfe9ff',.75,[-3,9,-4]], p1:['#ff3b2f',1.6,[-3.4,.6,-1.3],5], p2:['#cfe8ff',.6,[1,3,1],7], dust:['#dfeee6',7,.03,.6,.32] },
+  ground(g){ G.fill(g, '#76846a'); G.wash(g, 5, 3, 5.6, 3.3, '#3e4c3a', .7);
+    g.strokeStyle = 'rgba(200,185,150,.85)'; g.lineWidth = .7; g.lineCap = 'round'; g.beginPath(); g.moveTo(1.2, 1.9); g.bezierCurveTo(3.2, 2.6, 4.6, 3.4, 5.6, 5.8); g.stroke();
+    G.dots(g, 'rgba(120,80,40,.4)', 160, 12, 0, 0, 10, 6, .02, .06); },
+  pieces:[
+    { x:0, z:-3, w:9.6, h:4.8, draw(g, w, h){ D.arch(g, w, h, D.lg(g, 0, 0, 0, h, [[0,'#7f998f'],[1,'#c3d2ca']]));
+        D.atop(g, () => { D.ell(g, 'rgba(238,243,240,.8)', w * .74, h * .2, .35, .35); D.trunks(g, 0, w, h, .2, 18, 3, '#9db1a8', .08, .16); }); } },
+    { x:0, z:-2.1, w:9.4, h:4.4, d:.15, draw(g, w, h){ D.trunks(g, 0, w, h, .1, 11, 5, '#4b615a', .12, .24); D.rect(g, '#4b615a', 0, h - .14, w, .14);
+        const r = rng(7); for(let i = 0; i < 22; i++) D.ell(g, '#3f544e', r() * w, .15 + r() * .9, .35 + r() * .4, .18 + r() * .2); } },
+    { x:-2.3, z:-1.35, w:1.7, h:.8, d:.4, draw(g, w, h){ D.car(g, .85, h, 1.6, '#1a2127'); D.ell(g, '#ff5040', 1.62, h - .3, .05, .04); },
+      glow(g, w, h){ D.ell(g, '#ff4030', 1.62, h - .3, .07, .05); }, ei:1.6,
+      anim(pc, t, tt){ pc.hinge.position.x = pc.base.x - Math.min(1.7, Math.max(0, tt - 2) * .16); } },
+    { x:-3.9, z:-.5, w:2.3, h:4.3, d:.25, draw(g, w, h){ D.trunks(g, 0, w, h, .05, 3, 11, '#1d2a27', .22, .34); D.rect(g, '#1d2a27', 0, h - .1, w, .1); } },
+    { x:4.0, z:-.2, w:2, h:4.5, d:.3, draw(g, w, h){ D.trunks(g, 0, w, h, .05, 2, 13, '#1a2624', .24, .34); D.rect(g, '#1a2624', 0, h - .1, w, .1);
+        const r = rng(4); for(let i = 0; i < 10; i++) D.ell(g, '#1a2624', r() * w, .2 + r() * .8, .3 + r() * .3, .16 + r() * .14); } },
+    { x:.6, z:.9, w:1.6, h:1.45, d:.6, draw(g, w, h){ D.person(g, .55, h, 1.35, { kind:'child', pose:'out', dir:-1, color:'#22302e' }); D.teddy(g, 1.2, h, .6, '#6b4b30', '#a7825a'); } }
+  ],
+  beams:[{ from:[1.6,5.2,-2.7], to:[.9,0,.8], w:.8, spread:2.2, c:'#e4efff', op:.14 }, { from:[-.8,5.2,-2.4], to:[-1.2,0,.6], w:.6, spread:2.4, c:'#e4efff', op:.1 }],
+  glows:[{ x:2.3, y:3.8, z:-3.05, s:2.8, c:'#e6f0ec', op:.35 }]
+},
+/* 8 */ {
+  title:'달이 뜨는 밤', line:'가장 밝은 달빛이, 가장 차가운 사냥꾼이었어요.',
+  narr:['그날 밤 숲 위로 떠오른 것은 달이 아니었어요.',
+        '버려진 메카들을 사냥하는 거대한 기구였지요.',
+        '붙잡힌 데이비드는 그곳에서 떠돌이 메카, 지골로 조를 만났어요.',
+        '사람들이 환호하며 메카들을 부수던 축제의 무대 위에서, 살려 달라며 우는 데이비드의 모습은 너무도 사람 같았어요.',
+        '술렁이는 관중 사이로, 조와 데이비드와 테디는 어둠 속으로 달아났답니다.'],
+  mood:{ root:43, mode:'minor', prog:[0,6,5,6], bar:7, beat:.55, bright:900, rest:.35 },
+  look:{ bg:'#0b0915', hemi:['#8a86b8','#130d13',.35], key:['#ffe8c8',.85,[0,9,-3]], p1:['#fff1d0',2.2,[1.6,4.4,-2],9], p2:['#ff7a3a',1.6,[-2.5,1.2,-.8],6], dust:['#ffb070',4,.35,.5,.6] },
+  ground(g){ G.fill(g, '#8e6e50'); G.wash(g, 5, 3, 5.5, 3.2, '#4e3a2c', .6);
+    g.strokeStyle = 'rgba(240,220,180,.35)'; g.lineWidth = .04; g.beginPath(); g.ellipse(5, 3.4, 3.6, 1.5, 0, 0, TAU); g.stroke();
+    G.dots(g, 'rgba(60,40,25,.35)', 120, 21, 0, 0, 10, 6, .02, .05); },
+  pieces:[
+    { x:0, z:-3.1, w:9.6, h:4.8, draw(g, w, h){ D.arch(g, w, h, D.lg(g, 0, 0, 0, h, [[0,'#0c0a1e'],[1,'#2a2142']]));
+        D.atop(g, () => { D.stars(g, w, h * .6, 80, 9, '#f0e8ff'); const r = rng(14); for(let x = 0; x < w; x += .38) D.pine(g, x + r() * .2, h, .8 + r() * .9, '#120f22'); }); } },
+    { x:1.6, z:-2.35, y0:1.1, w:2.8, h:3.0, d:.2, draw(g, w, h, S){
+        D.line(g, '#8a7a6a', .015, [1.0, 2.3, 1.2, 2.62]); D.line(g, '#8a7a6a', .015, [1.8, 2.3, 1.6, 2.62]);
+        D.moon(g, 1.4, 1.25, 1.15, '#f6ecd0', '#d8c49a'); D.rrf(g, '#2a2230', 1.08, 2.6, .64, .36, .06);
+        S.bulbs = []; for(let i = 0; i < 18; i++){ const a = i / 18 * TAU; S.bulbs.push([1.4 + Math.cos(a) * 1.08, 1.25 + Math.sin(a) * 1.08]); }
+        S.bulbs.forEach(p => D.ell(g, '#fff6dc', p[0], p[1], .035, .035)); },
+      glow(g, w, h, S){ D.ell(g, 'rgba(255,236,190,.55)', 1.4, 1.25, 1.1, 1.1); S.bulbs.forEach(p => D.ell(g, '#ffffff', p[0], p[1], .045, .045)); D.rect(g, '#ffcf80', 1.15, 2.68, .5, .1); }, ei:1,
+      anim(pc, t, tt){ pc.hinge.position.y = pc.base.y + .5 * easeOut(clamp(tt / 6)) + Math.sin(t * .6) * .07; } },
+    { x:0, z:-1.2, w:9, h:1.7, d:.3, draw(g, w, h){ D.crowd(g, 0, w, h, 34, .9, 1.5, '#1a1322', 31);
+        for(let x = .1; x < w; x += .45) D.rect(g, '#241c2c', x, h - .55, .06, .55); D.rect(g, '#241c2c', 0, h - .5, w, .05); } },
+    { x:-3.2, z:-.3, w:2, h:1.9, d:.4, draw(g, w, h){ D.rrf(g, '#2a2432', 0, h - .2, w, .2, .04);
+        D.person(g, .55, h - .2, 1.3, { kind:'man', color:'#56526a', pose:'wave', dir:-1 }); D.person(g, 1.35, h - .2, 1.1, { kind:'woman', color:'#4a4660' });
+        D.cut(g, () => { g.beginPath(); g.arc(.62, .98, .09, 0, TAU); g.fill(); g.beginPath(); g.arc(1.42, 1.38, .07, 0, TAU); g.fill(); });
+        for(let x = .06; x < w; x += .2) D.rect(g, '#3d3549', x, 0, .04, h - .2); D.rect(g, '#3d3549', 0, 0, w, .06); } },
+    { x:1.0, z:.9, w:2.4, h:2.35, d:.55, draw:trio('#2a2430', '#283048') }
+  ],
+  beams:[{ from:[1.6,1.6,-2.3], to:[-1.2,0,.4], w:.25, spread:5, c:'#fff4dc', op:.2 }, { from:[1.6,1.6,-2.3], to:[2.8,0,.9], w:.25, spread:5, c:'#fff4dc', op:.16 }, { from:[1.6,1.6,-2.3], to:[.6,0,1.6], w:.25, spread:5, c:'#fff4dc', op:.14 }],
+  glows:[{ x:1.6, y:2.7, z:-2.4, s:5.5, c:'#fff0cc', op:.5 }, { x:-2.5, y:.6, z:-.9, s:1.6, c:'#ff7a3a', op:.6, flicker:1 }]
+},
+/* 9 */ {
+  title:'루즈 시티', line:'꺼지지 않는 불빛 사이로, 수수께끼 같은 대답이 돌아왔어요.',
+  narr:['조는 데이비드를 네온이 꺼지지 않는 도시, 루즈 시티로 데려갔어요.',
+        '무엇이든 대답해 준다는 닥터 노우에게, 푸른 요정이 어디 있는지 묻기 위해서였지요.',
+        '수많은 불빛 사이로 돌아온 대답은 한 편의 수수께끼 같은 시였어요.',
+        '물에 잠긴 세상의 끝, 바다 너머 무너진 도시로 가면 요정을 만날 수 있으리라는.',
+        '데이비드의 마음은 그 한 줄의 희망으로 가득 찼답니다.'],
+  mood:{ root:51, mode:'mixolydian', prog:[0,6,3,0], bar:6, beat:.4, bright:1800, rest:.3 },
+  look:{ bg:'#11071a', hemi:['#ff7ad9','#12081a',.35], key:['#c7a6ff',.6,[-4,8,5]], p1:['#ff3fa8',2.2,[-1.5,2.2,-1.2],8], p2:['#3ff0ff',2.0,[2.7,1.6,.6],6], dust:['#ff9ef0',3.5,.2,.6,.65] },
+  ground(g){ G.fill(g, '#56466a'); G.wash(g, 5, 3, 5.4, 3.2, '#2c1e3c', .7);
+    const r = rng(17); for(let i = 0; i < 26; i++){ const x = r() * 10; g.fillStyle = hexA(r() < .5 ? '#ff6fc8' : '#5fe6f0', .5); g.fillRect(x, 1 + r() * 2, .05 + r() * .08, 1 + r() * 2.4); } },
+  pieces:[
+    { x:0, z:-3.1, w:9.6, h:4.8, draw(g, w, h, S){ D.arch(g, w, h, D.lg(g, 0, 0, 0, h, [[0,'#180c2c'],[1,'#3a1a4a']]));
+        D.atop(g, () => { D.stars(g, w, h * .4, 30, 19, '#ffd8f6');
+          S.win = D.skyline(g, 0, w, h, { hmin:1.6, hmax:4.0, wmin:.5, wmax:1.1, c:'#22123a', seed:23, win:.16, lit:['#ff6fc8','#5fe6f0','#ffc070'] });
+          S.neon = [[1.4,1.4,.28,'#ff4fb8'],[6.8,1.1,.22,'#3ff0ff'],[4.6,.9,.18,'#ffc070']];
+          S.neon.forEach(n => { g.strokeStyle = n[3]; g.lineWidth = .05; g.beginPath(); g.arc(n[0], n[1], n[2], 0, TAU); g.stroke(); }); }); },
+      glow(g, w, h, S){ D.wins(g, S.win); S.neon.forEach(n => { g.strokeStyle = n[3]; g.lineWidth = .07; g.beginPath(); g.arc(n[0], n[1], n[2], 0, TAU); g.stroke(); }); }, ei:1.4 },
+    { x:-.8, z:-1.6, w:4.6, h:3.4, d:.2, draw(g, w, h){
+        g.beginPath(); archPath(g, .2, h, w - .4, 3.2); g.fillStyle = '#2a1640'; g.fill();
+        D.cut(g, () => { g.beginPath(); archPath(g, .6, h, w - 1.2, 2.72); g.fill(); });
+        neonArch(g, w, h, .05); },
+      glow(g, w, h){ neonArch(g, w, h, .08); }, ei:1.5 },
+    { x:2.7, z:.1, w:1.8, h:2.5, d:.4, draw(g, w, h){ D.rrf(g, '#221a38', .3, h - .2, 1.2, .2, .04); D.rrf(g, '#2a1f44', .62, 1.3, .56, 1.05, .06);
+        g.beginPath(); g.arc(.9, .8, .74, 0, TAU); g.fillStyle = '#2a1f44'; g.fill();
+        g.beginPath(); g.arc(.9, .8, .66, 0, TAU); g.fillStyle = D.rg(g, .9, .8, .05, .66, [[0,'#c8fbff'],[.6,'#3fb8e0'],[1,'#1a3a7a']]); g.fill();
+        drawKnow(g, '#effeff'); },
+      glow(g){ g.beginPath(); g.arc(.9, .8, .66, 0, TAU); g.fillStyle = '#1f9fc8'; g.fill(); drawKnow(g, '#ffffff'); }, ei:1.2 },
+    { x:-1.4, z:1.0, w:2.4, h:2.35, d:.55, draw:trio('#2a1f3a', '#281e38') }
+  ],
+  glows:[{ x:-.8, y:2.3, z:-1.5, s:3.8, c:'#ff4fb8', op:.35 }, { x:2.7, y:1.7, z:.25, s:2.8, c:'#3ff0ff', op:.5, pulse:1.2 }]
+},
+/* 10 */ {
+  title:'세상의 끝', line:'세상에 하나뿐인 줄 알았던 아이가, 처음으로 외로움을 알았어요.',
+  narr:['조와 데이비드는 물에 잠긴 맨해튼, 무너진 빌딩 숲에 닿았어요.',
+        '가장 높은 탑 꼭대기에서, 데이비드는 자신을 만든 하비 교수를 만났지요.',
+        '그리고 그곳에서, 자신과 똑같은 얼굴을 한 아이들이 상자 속에 나란히 잠들어 있는 것을 보았어요.',
+        '세상에 하나뿐인 줄 알았던 아이는, 그날 처음으로 부서질 듯한 외로움을 알았어요.',
+        '데이비드는 높은 창가에서, 깊은 바다를 향해 조용히 떨어져 내렸답니다.'],
+  mood:{ root:52, mode:'minor', prog:[0,5,2,6], bar:10, beat:.9, bright:700, rest:.45 },
+  look:{ bg:'#18121a', hemi:['#ffc9a0','#18121a',.45], key:['#ffb07a',1.1,[-6,4,-4]], p1:['#ffd8a8',1.2,[2.4,3.4,-1.2],6], p2:['#8fb8ff',.6,[0,1.2,2],6], dust:['#ffd8c0',6,.04,.4,.3] },
+  ground(g){ G.fill(g, '#cfc3c2'); D.rect(g, '#8e7a90', 0, 0, 10, 3.1); G.wash(g, 3, 1.4, 3, 1.4, '#e0a070', .5); G.ripples(g, 'rgba(255,230,200,.5)', 40, 8, 3); },
+  pieces:[
+    { x:0, z:-3.1, w:9.6, h:4.8, draw(g, w, h){ D.arch(g, w, h, D.lg(g, 0, 0, 0, h, [[0,'#3b2a4a'],[.6,'#b86a5a'],[1,'#f2b27a']]));
+        D.atop(g, () => { D.ell(g, '#ffe0a8', w * .24, h * .74, .5, .5); for(let i = 0; i < 6; i++) D.ell(g, 'rgba(232,154,122,.35)', w * (.1 + i * .16), h * (.4 + (i % 2) * .12), 1.1, .08);
+          const r = rng(2); for(let i = 0; i < 7; i++){ const x = 5 + r() * 3, y = .8 + r() * 1.2; D.line(g, '#3a2a3a', .018, [x - .08, y - .04, x, y, x + .08, y - .04]); } }); },
+      glow(g, w, h){ D.ell(g, '#ffb070', w * .24, h * .74, .5, .5); }, ei:.8 },
+    { x:0, z:-2.3, w:9.4, h:3.8, d:.15, draw(g, w, h){ const r = rng(29);
+        for(let i = 0; i < 9; i++){ const x = .3 + i * 1.02 + r() * .3, bw = .45 + r() * .4, bh = 1.5 + r() * 2.1; g.save(); g.translate(x + bw / 2, h); g.rotate((r() - .5) * .12);
+          D.rect(g, '#5e4050', -bw / 2, -bh, bw, bh); D.rect(g, '#5e4050', -bw * .32, -bh - .22, bw * .64, .24); D.rect(g, '#5e4050', -bw * .16, -bh - .4, bw * .32, .2); D.rect(g, '#5e4050', -.015, -bh - .7, .03, .32); g.restore(); } } },
+    { x:2.4, z:-1.0, w:1.9, h:4.3, d:.3, draw(g, w, h){ D.rect(g, '#3a2838', .3, 1.2, 1.3, h - 1.2); D.rect(g, '#3a2838', .45, .7, 1.0, .6); D.rect(g, '#3a2838', .62, .35, .66, .4); D.rect(g, '#3a2838', .93, 0, .04, .4);
+        D.rect(g, '#ffd9a0', .52, .85, .86, .18); for(let j = 0; j < 9; j++) D.rect(g, 'rgba(255,217,160,.25)', .45, 1.5 + j * .3, 1.0, .05); },
+      glow(g){ D.rect(g, '#ffc880', .52, .85, .86, .18); }, ei:1.3 },
+    { x:-1.7, z:.5, w:4.8, h:1.55, d:.45, draw(g){ for(let i = 0; i < 5; i++){ const x = .1 + i * .94; D.rrf(g, '#d9d3e6', x, .03, .84, 1.5, .05); D.rrf(g, '#9fb2d0', x + .06, .09, .72, 1.38, .03);
+          D.person(g, x + .42, 1.44, 1.2, { kind:'child', color:'#4a5670' }); } },
+      glow(g){ for(let i = 0; i < 5; i++) D.rrf(g, '#43527a', .16 + i * .94, .09, .72, 1.38, .03); }, ei:.6 },
+    { x:1.7, z:1.45, w:.85, h:1.3, d:.7, draw(g, w, h){ D.person(g, w / 2, h, 1.25, { kind:'child', dir:-1, color:'#2a2f45' }); } }
+  ],
+  water:[{ x:0, z:-2.0, w:10, d:3.0, level:.5, c:'#6a5a78', op:.55 }],
+  glows:[{ x:-2.4, y:1.9, z:-3.15, s:4.5, c:'#ffb070', op:.7 }, { x:2.4, y:3.35, z:-.95, s:1.5, c:'#ffd9a0', op:.7 }, { x:-1.7, y:.8, z:.6, s:3.8, c:'#bcd4ff', op:.2 }]
+},
+/* 11 */ {
+  title:'푸른 요정', line:'불빛이 하나둘 꺼질 때까지, 아이는 빌고 또 빌었어요.',
+  narr:['바다 깊은 곳, 옛 놀이공원의 폐허 속에서 데이비드는 마침내 푸른 요정을 만났어요.',
+        '데이비드를 구해 낸 조는, 뒤쫓아 온 이들에게 붙잡혀 하늘 너머로 사라졌지요.',
+        '데이비드는 작은 잠수정을 타고 다시 요정 앞으로 내려갔어요.',
+        '무너진 관람차가 길을 막아 버렸지만, 아이는 두 손을 모으고 빌고 또 빌었어요.',
+        '진짜 아이가 되게 해 달라고, 잠수정의 불빛이 모두 꺼질 때까지요.'],
+  mood:{ root:50, mode:'lydian', prog:[0,1,4,0], bar:11, beat:1.0, bright:900, rest:.4 },
+  look:{ bg:'#03101d', fog:.75, hemi:['#3fa0d8','#020810',.45], key:['#8fd4ff',.8,[2,9,2]], p1:['#7fdcff',2.6,[-.3,2.2,-.4],7], p2:['#fff0b0',1.5,[1.5,1,1.4],5], dust:['#bfefff',4.5,.3,.2,.55] },
+  ground(g){ G.fill(g, '#7ea0a2'); G.wash(g, 5, 3, 5.6, 3.3, '#2a5a6e', .7);
+    G.clear(g, () => { g.globalAlpha = .35; g.strokeStyle = '#000'; g.lineWidth = .03; const r = rng(33);
+      for(let i = 0; i < 40; i++){ const x = r() * 10, y = r() * 5.8; g.beginPath(); g.moveTo(x, y); g.bezierCurveTo(x + .2, y - .2, x + .4, y + .2, x + .6, y); g.stroke(); } }); },
+  pieces:[
+    { x:0, z:-3.1, w:9.6, h:4.8, draw(g, w, h){ D.arch(g, w, h, D.lg(g, 0, 0, 0, h, [[0,'#0b3d5c'],[1,'#041829']]));
+        D.atop(g, () => { [[1.5,.9],[4.4,1.1],[7.4,.8]].forEach(([x, s]) => D.poly(g, 'rgba(160,220,255,.1)', [x - .3 * s, 0, x + .3 * s, 0, x + 1.2 * s, h, x - 1.2 * s, h]));
+          [[.6,1.6],[1.4,2.2],[7.8,1.8],[8.8,1.3]].forEach(([x, hh]) => { D.rect(g, '#0a2c44', x - .25, h - hh, .5, hh); D.poly(g, '#0a2c44', [x - .32, h - hh, x, h - hh - .5, x + .32, h - hh]); }); }); } },
+    { x:-1.6, z:-2.3, w:4.6, h:4.6, d:.15, draw(g, w, h){ g.save(); g.translate(w / 2, h); g.rotate(-.18);
+        D.line(g, '#2a6a86', .09, [-1.2, 0, 0, -2.3, 1.2, 0]); D.wheel(g, 0, -2.3, 1.9, '#2a6a86', .07); g.restore();
+        G.dots(g, 'rgba(90,160,120,.5)', 60, 3, .3, .3, w - .3, h - .2, .02, .05); } },
+    { x:2.9, z:-1.5, w:3.2, h:2.2, d:.25, draw(g, w, h){ const y = x => h * (.42 - .28 * Math.sin(x / w * 5.5)); const pts = [];
+        for(let x = 0; x <= w + .01; x += .1) pts.push(x, y(x)); D.line(g, '#1f4f68', .06, pts);
+        for(let x = .1; x < w; x += .32){ D.line(g, '#1f4f68', .035, [x, y(x), x, h]); D.line(g, '#1f4f68', .02, [x, y(x) + .1, x + .32, h]); } } },
+    { x:-.3, z:-.4, w:1.7, h:2.9, d:.35, draw(g, w, h){ D.rrf(g, '#2a4a60', .3, h - .25, 1.1, .25, .04); D.fairy(g, w / 2, h - .22, 2.62, '#bfeaff', '#3f86c8'); },
+      glow(g, w, h){ D.fairy(g, w / 2, h - .22, 2.62, '#4aa8e8', '#1a5a9a'); D.star(g, '#ffffff', w / 2 + 2.62 * .27, h - .22 - 2.62 * .985, .1); }, ei:.9 },
+    { x:-3.7, z:.7, w:1, h:2, d:.5, draw(g, w, h){ D.weed(g, w, h, '#1f5a4a', 5); }, anim:swayAnim(.07, .9, 0) },
+    { x:4.0, z:.4, w:1, h:1.8, d:.55, draw(g, w, h){ D.weed(g, w, h, '#23604e', 9); }, anim:swayAnim(.08, .8, 2) },
+    { x:2.3, z:1.0, y0:.35, w:1.8, h:1.2, d:.6, draw(g){ D.sub(g, .9, .62, 1.5, '#c9a24a', '#bfe8ff', -1, (x, y) => D.person(g, x, y + .17, .34, { kind:'child', pose:'pray', color:'#2a3a55' })); },
+      glow(g){ D.ell(g, '#fff3c0', .9 - .78, .62 + .075, .09, .075); }, ei:1.5,
+      anim(pc, t){ pc.hinge.position.y = pc.base.y + Math.sin(t * .8) * .05; } }
+  ],
+  beams:[{ from:[-3,5.4,-2.6], to:[-2.4,0,.5], w:.7, spread:2.2, c:'#bfe8ff', op:.12 }, { from:[.4,5.4,-2.6], to:[.1,0,.8], w:.8, spread:2.2, c:'#bfe8ff', op:.14 },
+         { from:[3,5.4,-2.6], to:[3.4,0,.5], w:.6, spread:2.2, c:'#bfe8ff', op:.1 }, { from:[1.52,.86,1.05], to:[-.2,1.2,-.3], w:.18, spread:6, c:'#fff3c0', op:.3 }],
+  glows:[{ x:-.3, y:2.45, z:-.3, s:3, c:'#8fe0ff', op:.55, pulse:.8 }, { x:1.52, y:.86, z:1.08, s:.8, c:'#fff3c0', op:.8 }]
+},
+/* 12 */ {
+  title:'이천 년의 얼음', line:'모든 것이 얼어붙은 뒤에도, 아이의 기도는 멈추지 않았어요.',
+  narr:['시간이 흘러 바다는 얼어붙었고, 사람들은 모두 세상에서 사라졌어요.',
+        '이천 년이 지난 어느 날, 아주 먼 미래의 메카들이 얼음 속에서 데이비드를 찾아냈지요.',
+        '그는 여전히 두 손을 모은 채, 푸른 요정을 바라보고 있었어요.',
+        '깨어난 데이비드가 손을 뻗자, 얼어붙은 요정은 조용히 부서져 내렸어요.',
+        '인간을 기억하는 마지막 존재였기에, 메카들은 아이의 기억을 소중히 들여다보았답니다.'],
+  mood:{ root:49, mode:'lydian', prog:[0,4,5,1], bar:12, beat:1.1, bright:1200, rest:.5 },
+  look:{ bg:'#08111d', hemi:['#cfe8ff','#18222f',.6], key:['#e6f2ff',1.05,[-4,9,3]], p1:['#7ff0d0',1.4,[0,4.2,-2.6],10], p2:['#bfe6ff',1.4,[1.7,1.5,.9],5], dust:['#ffffff',4,-.35,.5,.75] },
+  ground(g){ G.fill(g, '#cfdeea'); G.wash(g, 5, 3, 5.4, 3.2, '#8fb0c8', .6);
+    g.strokeStyle = 'rgba(90,120,150,.5)'; g.lineWidth = .02; const r = rng(41);
+    for(let i = 0; i < 18; i++){ let x = r() * 10, y = r() * 5.6; g.beginPath(); g.moveTo(x, y); for(let k = 0; k < 4; k++){ x += (r() - .5) * .8; y += (r() - .3) * .5; g.lineTo(x, y); } g.stroke(); } },
+  pieces:[
+    { x:0, z:-3.1, w:9.6, h:4.8, draw(g, w, h){ D.arch(g, w, h, D.lg(g, 0, 0, 0, h, [[0,'#040a1c'],[1,'#10233f']]));
+        D.atop(g, () => { D.stars(g, w, h * .8, 120, 43, '#eef6ff'); aurora(g, w, h, .55); }); },
+      glow(g, w, h){ aurora(g, w, h, .8); }, ei:1.1 },
+    { x:0, z:-2.2, w:9.4, h:1.9, d:.15, draw(g, w, h){ const r = rng(47), p = [0, h];
+        for(let x = 0; x <= w; x += .35) p.push(x, .2 + r() * (h - .5)); p.push(w, h); D.poly(g, '#e3f0fa', p);
+        D.atop(g, () => { for(let i = 0; i < 14; i++){ const x = r() * w; D.poly(g, 'rgba(150,190,220,.45)', [x, h, x + .3, .4 + r() * .8, x + .6, h]); } }); } },
+    { x:-1.8, z:-1.0, w:3.4, h:2.5, d:.3, draw(g, w, h){ D.poly(g, '#b9d8ee', [.1,h,0,.9,.4,.2,1.4,0,2.6,.25,3.3,.8,3.4,h]);
+        D.atop(g, () => { D.poly(g, 'rgba(255,255,255,.35)', [.4,.2,1.4,0,1.1,1.2,.2,1.4]);
+          g.globalAlpha = .55; D.wheel(g, 2.4, 1.1, .75, '#7ea6c4', .04); D.fairy(g, 1.1, h - .1, 1.6, '#9cc3de', '#7aa6c8');
+          D.sub(g, 1.8, h - .45, .7, '#a3b08e', '#d5eef8', -1); g.globalAlpha = 1; }); } },
+    { x:1.7, z:.4, w:3.0, h:3.2, d:.45, draw(g, w, h){ const gr = D.lg(g, 0, 0, 0, h, [[0,'#f2f8fc'],[1,'#b8cfe0']]);
+        D.person(g, .6, h, 3.0, { kind:'mecha', color:gr, pose:'hold', dir:1 }); D.person(g, 1.5, h, 2.7, { kind:'mecha', color:gr, dir:-1 }); D.person(g, 2.4, h, 2.9, { kind:'mecha', color:gr, pose:'out', dir:-1 }); },
+      glow(g, w, h){ D.person(g, .6, h, 3.0, { kind:'mecha', color:'#3a7a98', pose:'hold', dir:1 }); D.person(g, 1.5, h, 2.7, { kind:'mecha', color:'#3a7a98', dir:-1 }); D.person(g, 2.4, h, 2.9, { kind:'mecha', color:'#3a7a98', pose:'out', dir:-1 }); }, ei:.5 },
+    { x:-.3, z:1.25, w:.85, h:1.3, d:.65, draw(g, w, h){ D.person(g, w / 2, h, 1.25, { kind:'child', pose:'pray', color:'#34425e' }); } }
+  ],
+  glows:[{ x:1.7, y:1.7, z:.5, s:3.6, c:'#c8f6ff', op:.35 }, { x:0, y:3.7, z:-3.2, s:7, c:'#7ff0d0', op:.18, pulse:.4 }]
+},
+/* 13 */ {
+  title:'단 하루', line:'허락된 시간은 단 하루, 그래서 더 눈부신 하루였어요.',
+  narr:['메카들은 데이비드의 기억을 따라, 그리운 집을 다시 지어 주었어요.',
+        '테디가 오래도록 간직해 온 금빛 머리카락 한 가닥 덕분에, 엄마를 다시 불러올 수 있었지요.',
+        '하지만 허락된 시간은 단 하루뿐이었어요.',
+        '둘은 함께 그림을 그리고, 숨바꼭질을 하고, 촛불을 켠 케이크 앞에 마주 앉았어요.',
+        '그리고 저녁 무렵, 엄마는 데이비드가 평생 기다려 온 말을 들려주었답니다.'],
+  mood:{ root:53, mode:'major', prog:[0,5,3,4], bar:7, beat:.5, bright:1600, rest:.3 },
+  look:{ bg:'#1b130b', hemi:['#ffe0b0','#3a2614',.6], key:['#ffd28a',1.35,[6,6,3]], p1:['#ffb45a',2.0,[.2,1.7,-.1],5], p2:['#fff0d0',.8,[-3,3,-1],7], dust:['#ffd88a',5,.1,.5,.75] },
+  ground(g){ G.fill(g, '#d8ab78'); G.boards(g, 'rgba(120,70,30,.25)', .4); G.wash(g, 5, 3.6, 3.4, 1.4, '#c4674a', .8);
+    [['#f2b544',1.4,4.6],['#5aa4d6',8.2,4.4],['#e2574c',7.6,5.0]].forEach(([c, x, y], i) => { g.save(); g.translate(x, y); g.rotate(i - 1); D.rect(g, '#fbf6ea', -.28, -.2, .56, .4); D.ell(g, c, 0, 0, .1, .1); g.restore(); }); },
+  pieces:[
+    { x:0, z:-2.9, w:9.4, h:4.3, draw(g, w, h){ D.back(g, w, h, D.lg(g, 0, 0, 0, h, [[0,'#e8c690'],[1,'#f3dcae']]));
+        D.atop(g, () => { [1.0, 6.6].forEach(x => D.window(g, x, .5, 1.8, 2.2, '#fff4dc', D.lg(g, 0, .5, 0, 2.7, [[0,'#ffe7b0'],[1,'#ffc97a']]), .09));
+          [[3.5,.9,'#f2b544'],[4.4,.7,'#5aa4d6'],[5.3,1.0,'#e2574c']].forEach(([x, y, c]) => { D.rect(g, '#fbf7ee', x, y, .7, .55); D.ell(g, c, x + .35, y + .22, .12, .12);
+            D.line(g, '#4a6a9a', .02, [x + .15, y + .5, x + .15, y + .35]); D.line(g, '#9a3f4a', .02, [x + .5, y + .5, x + .5, y + .3]); }); }); },
+      glow(g){ [1.0, 6.6].forEach(x => D.rrf(g, '#ffd79a', x + .09, .59, 1.62, 2.02, .02)); }, ei:.8 },
+    { x:0, z:-2.1, y0:2.7, w:7, h:.75, d:.2, draw(g, w){ const cols = ['#e2574c','#f2b544','#5aa4d6','#7cc27a','#c77dd8'], y = x => .1 + Math.sin(x / w * Math.PI) * .18, pts = [];
+        for(let x = 0; x <= w; x += .1) pts.push(x, y(x)); D.line(g, '#7a5a3a', .025, pts);
+        for(let i = 0; i < 13; i++){ const x = .3 + i * (w - .6) / 12, yy = y(x); D.poly(g, cols[i % 5], [x - .2, yy, x + .2, yy, x, yy + .45]); } },
+      anim:swayAnim(.012, .7, 1) },
+    { x:.2, z:-1.1, w:4.4, h:2.5, d:.35, draw(g, w, h){ D.person(g, 1.1, h, 2.35, { kind:'woman', pose:'hold', color:'#9a3f4a', dir:1 }); D.person(g, 3.2, h, 1.55, { kind:'child', pose:'hold', color:'#3a4a6a', dir:-1 }); } },
+    { x:.2, z:-.3, w:3.4, h:1.4, d:.5, draw(g){ D.rect(g, '#8a5a3a', .05, .66, 3.3, .08); D.rrf(g, '#f4ece0', .1, .72, 3.2, .68, .06);
+        D.rrf(g, '#f7e8ea', 1.15, .42, 1.1, .32, .05); D.rrf(g, '#f7e8ea', 1.35, .2, .7, .24, .05);
+        for(let i = 0; i < 7; i++) D.ell(g, '#e9a6b4', 1.2 + i * .16, .44, .06, .05); for(let i = 0; i < 5; i++) D.ell(g, '#e9a6b4', 1.4 + i * .15, .22, .05, .04);
+        for(let i = 0; i < 5; i++) D.rect(g, '#fff6e8', 1.42 + i * .14, .05, .035, .16);
+        D.ell(g, '#e8dccb', .55, .7, .3, .06); D.ell(g, '#e8dccb', 2.85, .7, .3, .06); } },
+    { x:-2.9, z:1.0, w:1, h:1.1, d:.65, draw(g, w, h){ D.teddy(g, .5, h, 1.05, '#9a6a3c', '#d8b58a'); } }
+  ],
+  glows: Array.from({ length:5 }, (_, i) => ({ x:-.06 + i * .14, y:1.43, z:-.27, s:.32, c:'#ffb45a', op:.95, flicker:1 }))
+          .concat([{ x:-2.8, y:2.6, z:-2.85, s:3, c:'#ffe2a8', op:.35 }, { x:2.8, y:2.6, z:-2.85, s:3, c:'#ffe2a8', op:.35 }])
+},
+/* 14 */ {
+  title:'꿈이 시작되는 곳', line:'그렇게, 아이는 처음으로 꿈을 꾸었어요.', end:true,
+  narr:['밤이 깊어지자, 엄마는 조용히 잠이 들었어요.',
+        '이번에는 다시 깨어나지 않을, 길고 고요한 잠이었지요.',
+        '데이비드는 엄마 곁에 누워, 그 손을 꼭 잡았어요.',
+        '그리고 태어나 처음으로 눈을 감고, 꿈이 시작되는 곳으로 떠났답니다.',
+        '사랑받고 싶었던 한 아이의 긴 여행은, 그렇게 따뜻하게 끝이 났어요.'],
+  mood:{ root:48, mode:'major', prog:[0,3,5,4], bar:10, beat:.9, bright:1000, rest:.45 },
+  look:{ bg:'#060913', hemi:['#8f9cd0','#090b15',.35], key:['#aebcff',.7,[4,8,-3]], p1:['#ffd89a',1.5,[-3.1,1.6,-.2],5], p2:['#bcd6ff',1.2,[2.8,3.4,-2.4],8], dust:['#ffe6b0',6,.25,.6,.8] },
+  ground(g){ G.fill(g, '#46507c'); G.wash(g, 5, 3, 5.4, 3.2, '#1e2448', .7); G.wash(g, 5, 4, 2.8, 1.1, '#6a5a9a', .7);
+    G.clear(g, () => { g.globalAlpha = .5; const r = rng(51); for(let i = 0; i < 14; i++) D.star(g, '#000', 2.6 + r() * 4.8, 3.3 + r() * 1.5, .06 + r() * .06); }); },
+  pieces:[
+    { x:0, z:-2.9, w:9.4, h:4.3, draw(g, w, h){ D.back(g, w, h, D.lg(g, 0, 0, 0, h, [[0,'#0f1834'],[1,'#1c2a52']]));
+        D.atop(g, () => { const r = rng(53); for(let i = 0; i < 40; i++) D.star(g, '#34457e', r() * w, r() * h, .05);
+          const x = w * .62, y = h * .1; D.window(g, x, y, 2.4, 2.4, '#2a3a66', '#081028', .09);
+          g.save(); g.beginPath(); g.rect(x + .09, y + .09, 2.22, 2.22); g.clip(); D.stars(g, w, h, 70, 57, '#e8eeff');
+          D.ell(g, '#e8eeff', x + 1.5, y + .8, .36, .36); D.ell(g, '#081028', x + 1.36, y + .72, .32, .32); g.restore();
+          D.rect(g, '#2a3a66', x + 1.17, y, .06, 2.4); }); },
+      glow(g, w, h){ const x = w * .62, y = h * .1; D.ell(g, '#dfe8ff', x + 1.5, y + .8, .36, .36); D.ell(g, '#000', x + 1.36, y + .72, .32, .32);
+        const r = rng(53); for(let i = 0; i < 40; i++) D.star(g, '#1c2850', r() * w, r() * h, .05); }, ei:1.2 },
+    { x:-3.2, z:-.5, w:.9, h:1.7, d:.2, draw(g){ D.rrf(g, '#2a2f4e', .05, 1.0, .8, .7, .04); D.rect(g, '#6a5a4a', .42, .55, .06, .45); D.poly(g, '#f5deb0', [.15,.6,.75,.6,.62,.2,.28,.2]); },
+      glow(g){ D.poly(g, '#ffc070', [.15,.6,.75,.6,.62,.2,.28,.2]); }, ei:1.1 },
+    { x:-.3, z:-.8, w:4.8, h:1.6, d:.35, draw(g, w){
+        D.bed(g, w, { head:'#262c4c', pillow:'#c9d0ea', pillows:[1.4, 2.5], matt:'#2a3560', blanket:'#3a4a8a', bx:.9,
+          sleepers:[{ x:1.35, r:.21, hair:'#caa25a', face:'#e6d3bf' }, { x:2.48, r:.17, hair:'#3a3040', face:'#e8d8c6' }] });
+        const r = rng(59); for(let i = 0; i < 16; i++) D.star(g, '#8ea0e0', 1.2 + r() * 3.4, 1.0 + r() * .5, .035); } },
+    { x:2.5, z:.6, w:1, h:1.1, d:.55, draw(g, w, h){ D.teddy(g, .5, h, 1.05, '#7a5638', '#b8946a'); } }
+  ],
+  glows:[{ x:-3.2, y:1.3, z:-.45, s:1.8, c:'#ffcf80', op:.8 }, { x:2.1, y:3.4, z:-2.85, s:2.6, c:'#dfe8ff', op:.5 }]
+          .concat(Array.from({ length:9 }, (_, i) => ({ x:-1.8 + i * .38, y:1.2, z:-.6 + (i % 3) * .3, s:.34 + (i % 3) * .08, c:'#ffe6b0', op:.85, rise:1 })))
+}
+];
+
+/* ---------- 영어판 본문 ---------- */
+const EN = [
+  { title:'The Drowned World', line:'Even after the sea swallowed the cities, people still dreamed of love.',
+    narr:['Long ago, in a time that is still to come, the polar ice melted and the seas swallowed the cities of the coast.',
+          'The survivors could no longer have children as they wished, so they kept Mechas beside them, machines that never tired and never hungered.',
+          'Then one day, a scientist began to dream a quiet dream.',
+          'What if he could build a child who could truly love?'] },
+  { title:'The Boy in the White Light', line:'The door opened, and a child walked out of the light.',
+    narr:['Henry and Monica’s son, Martin, lay in a long, cold sleep inside a capsule, waiting for a cure that might never come.',
+          'To ease Monica’s grief, Henry brought a child home one day.',
+          'The boy who stepped out of the dazzling light was named David.',
+          'He was the very first Mecha child, made to love.'] },
+  { title:'Seven Words', line:'A love once imprinted could never be undone.',
+    narr:['At first, the machine child felt strange to Monica, and a little frightening.',
+          'But a few days later, she slowly read him seven words that would bind his heart to hers forever.',
+          'Each word lit up inside him like a tiny lamp.',
+          'From that moment on, David called her Mommy.',
+          'And a love once imprinted could never be undone.'] },
+  { title:'Teddy', line:'Whenever the sunlight slanted, David wrote letters to his mother.',
+    narr:['Monica gave David Teddy, the old Supertoy that Martin had once loved.',
+          'Teddy spoke little, but he was a gentle friend who never left David’s side.',
+          'When the afternoon light grew long, David wrote letters to his mother in clumsy handwriting.',
+          'He wrote that he loved her, and that he hoped she would love him too.'] },
+  { title:'Moonlight and Scissors', line:'A single strand of golden hair glimmered in the moonlight.',
+    narr:['As if by a miracle, Martin woke and came home.',
+          'With the real son returned, David’s place in the family began to tremble.',
+          'Goaded by Martin, David crept in on a moonlit night and cut a lock of his mother’s hair.',
+          'He believed it would make her love him more.',
+          'Woken by the snip of the scissors, Monica’s face filled with surprise and fear.',
+          'That small golden lock would be kept in secret by Teddy for a very long time.'] },
+  { title:'Night Beneath the Water', line:'Alone at the bottom, the boy looked quietly upward.',
+    narr:['At Martin’s birthday party, the children gathered around David by the pool and tested him cruelly.',
+          'Frightened, David clung to Martin, and the two of them fell into the water together.',
+          'The grown-ups rushed to pull Martin, choking, from the pool.',
+          'And at the very bottom, where no one looked back, David sank in silence.'] },
+  { title:'Left in the Forest', line:'The red lights faded into the fog.',
+    narr:['Called dangerous, David was to be sent back to the place that made him, and destroyed.',
+          'Unable to bear it, Monica drove him deep into the forest and left him there alone.',
+          'David wept and begged, but the car’s red lights faded away into the fog.',
+          'Alone with Teddy among the trees, he remembered the story of Pinocchio that his mother used to read.',
+          'If he could find the Blue Fairy, perhaps he too could become a real boy.'] },
+  { title:'The Night the Moon Rose', line:'The brightest moonlight was the coldest hunter.',
+    narr:['That night, what rose above the forest was not the moon.',
+          'It was a great balloon that hunted abandoned Mechas.',
+          'Captured, David met a wandering Mecha named Gigolo Joe.',
+          'On the stage of a fair where crowds cheered as Mechas were broken, David’s cries for mercy sounded far too human.',
+          'As the crowd stirred and wavered, Joe, David and Teddy slipped away into the dark.'] },
+  { title:'Rouge City', line:'Among lights that never went out, the answer came back as a riddle.',
+    narr:['Joe took David to Rouge City, where the neon never goes dark.',
+          'They came to ask Dr. Know, who could answer anything, where the Blue Fairy might be.',
+          'From among a thousand lights, the answer returned as a poem, like a riddle.',
+          'At the end of the drowned world, in a fallen city beyond the sea, the fairy might be found.',
+          'That single line of hope filled David’s heart.'] },
+  { title:'The End of the World', line:'The boy who thought he was one of a kind learned loneliness.',
+    narr:['Joe and David reached drowned Manhattan, a forest of fallen towers.',
+          'At the top of the tallest tower, David met Professor Hobby, the man who made him.',
+          'And there he saw rows of children with his very own face, sleeping side by side in boxes.',
+          'The boy who believed he was the only one of his kind felt, for the first time, a loneliness that could break him.',
+          'From a high window, David quietly fell toward the deep sea.'] },
+  { title:'The Blue Fairy', line:'Until the lights went out one by one, he prayed and prayed.',
+    narr:['Deep beneath the sea, among the ruins of an old amusement park, David at last found the Blue Fairy.',
+          'Joe, who had rescued him, was caught by those who hunted them and carried away into the sky.',
+          'David took a small submersible back down to the fairy.',
+          'A fallen Ferris wheel trapped him there, but the boy folded his hands and wished, again and again.',
+          'He wished to become a real boy, until every light in the little craft went dark.'] },
+  { title:'Two Thousand Years of Ice', line:'Even when everything froze, his prayer did not stop.',
+    narr:['Time passed. The sea froze over, and people vanished from the world.',
+          'Two thousand years later, Mechas from the far future found David in the ice.',
+          'His hands were still folded, his eyes still on the Blue Fairy.',
+          'When David woke and reached out, the frozen fairy quietly crumbled away.',
+          'He was the last being who remembered humans, so the Mechas looked into his memories with great care.'] },
+  { title:'Just One Day', line:'Only one day was allowed, and so it shone all the brighter.',
+    narr:['Following David’s memories, the Mechas rebuilt the home he longed for.',
+          'Thanks to the golden lock of hair that Teddy had kept all along, they could bring his mother back.',
+          'But they were allowed only a single day.',
+          'Together they painted, played hide-and-seek, and sat across from each other before a cake glowing with candles.',
+          'And as evening fell, his mother told him the words David had waited his whole life to hear.'] },
+  { title:'Where Dreams Begin', line:'And so, for the first time, the boy dreamed.',
+    narr:['As the night grew deep, his mother quietly fell asleep.',
+          'This time, it was a long and peaceful sleep from which she would not wake.',
+          'David lay down beside her and held her hand tightly.',
+          'And for the first time in his life, he closed his eyes and went to the place where dreams begin.',
+          'So ended the long journey of a boy who only wanted to be loved, warmly, and at last.'] }
+];
+const UI = {
+  ko:{ doc:'A.I. 팝업북', mark:'팝업북', lang:'English', langTip:'영어로 읽기 (Read in English)', music:'음악', musicTip:'배경음악 켜기/끄기', voice:'낭독', voiceTip:'낭독 켜기/끄기',
+    auto:'자동 넘김', autoTip:'낭독이 끝나면 자동으로 다음 장 넘기기', replay:'다시 듣기', replayTip:'이 장면 다시 듣기', home:'표지로', homeTip:'책을 덮고 표지로 돌아가기',
+    navLabel:'책장 넘기기', prev:'이전 장', next:'다음 장', again:'처음부터 다시 읽기', eyebrow:'사랑을 배운 아이의 이야기', open:'책 펼치기',
+    hint:'소리를 켜 두세요. 한 여성 나레이터가 열네 장면을 차례로 읽어 드려요.<br>화살표 키나 좌우로 쓸어 넘기기로 책장을 넘길 수 있어요.',
+    credit:'스티븐 스필버그 감독의 영화 「A.I.」(2001)에 바치는 비공식 헌정 팝업북입니다. 모든 그림과 음악, 목소리는 코드로 만들었습니다.',
+    loading:'종이를 접고 있어요…', noVoice:'이 브라우저에는 한국어 여성 음성이 없어 자막으로 읽어 드려요', noSpeech:'이 브라우저는 음성 낭독을 지원하지 않아 자막으로 읽어 드려요',
+    dot:(i, t) => `${i + 1}장 ${t}` },
+  en:{ doc:'A.I. Pop-up Book', mark:'Pop-up Book', lang:'한국어', langTip:'한국어로 읽기 (Read in Korean)', music:'Music', musicTip:'Turn music on or off', voice:'Narration', voiceTip:'Turn narration on or off',
+    auto:'Auto-turn', autoTip:'Turn the page when the narration ends', replay:'Replay', replayTip:'Hear this scene again', home:'Cover', homeTip:'Close the book and return to the cover',
+    navLabel:'Turn the pages', prev:'Previous page', next:'Next page', again:'Read again from the start', eyebrow:'The story of a boy who learned to love', open:'Open the book',
+    hint:'Turn your sound on. A woman narrator will read the fourteen scenes to you.<br>Use the arrow keys or swipe to turn the pages.',
+    credit:'An unofficial tribute pop-up book for Steven Spielberg’s film A.I. (2001). Every picture, every note of music and the voice are made with code.',
+    loading:'Folding the paper…', noVoice:'No English female voice in this browser, so the story appears as subtitles', noSpeech:'This browser can’t read aloud, so the story appears as subtitles',
+    dot:(i, t) => `Chapter ${i + 1}: ${t}` }
+};
+let LANG = 'ko';
+try { const s = localStorage.getItem('ai-popup-lang'); if(s === 'en' || s === 'ko') LANG = s; } catch(e){}
+const TX = i => LANG === 'en' ? EN[i] : SC[i];
+
+function poolWall(g, w, h){ D.rect(g, '#5fb0c8', 0, .12, w, h - .12); D.rect(g, '#d8d2c4', 0, 0, w, .14);
+  g.strokeStyle = 'rgba(180,230,240,.6)'; g.lineWidth = .015; for(let x = 0; x < w; x += .22){ g.beginPath(); g.moveTo(x, .14); g.lineTo(x, h); g.stroke(); }
+  for(let y = .36; y < h; y += .22){ g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); } }
+function archPath(g, x, base, w, hh){ const r = w / 2; g.moveTo(x, base); g.lineTo(x, base - hh + r); g.arc(x + r, base - hh + r, r, Math.PI, 0); g.lineTo(x + w, base); g.closePath(); }
+function neonArch(g, w, h, lw){ g.lineWidth = lw; g.strokeStyle = '#ff4fb8'; g.beginPath(); archPath(g, .32, h, w - .64, 3.05); g.stroke();
+  g.strokeStyle = '#3ff0ff'; g.beginPath(); archPath(g, .5, h, w - 1.0, 2.82); g.stroke(); }
+function drawKnow(g, c){ g.strokeStyle = c; g.lineWidth = .035; g.beginPath(); for(let a = 0; a < 5.5 * Math.PI; a += .15){ const r = .04 + a * .03; g.lineTo(.9 + Math.cos(a) * r, .8 + Math.sin(a) * r); } g.stroke();
+  [[.45,.45],[1.35,.5],[1.3,1.15],[.5,1.2]].forEach(p => D.star(g, c, p[0], p[1], .06)); }
+function aurora(g, w, h, a){ [['#7ff0d0',.8,.9],['#a88bff',.5,1.3],['#6fe0ff',1.2,1.0]].forEach(([c, y0, L], k) => {
+  const q = g.createLinearGradient(0, y0, 0, y0 + L + .4); q.addColorStop(0, hexA(c, 0)); q.addColorStop(.3, hexA(c, a)); q.addColorStop(1, hexA(c, 0)); g.fillStyle = q;
+  for(let x = 0; x < w; x += .05){ const y = y0 + Math.sin(x * .9 + k * 2) * .35 + Math.sin(x * 2.3 + k) * .1; g.fillRect(x, y, .045, L); } }); }
+
+/* =========================================================
+   Three.js 무대
+   ========================================================= */
+const canvas = document.getElementById('gl');
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias:true, powerPreference:'high-performance' }); }
+catch(e){ document.getElementById('loading').textContent = '이 브라우저에서는 입체 장면을 그릴 수 없어요 (WebGL 필요)'; return; }
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.08;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const ANISO = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+const MOBILE = Math.min(innerWidth, innerHeight) < 600;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#0a0c16');
+scene.fog = new THREE.Fog('#0a0c16', 20, 50);
+const cam = new THREE.PerspectiveCamera(32, innerWidth / innerHeight, .1, 200);
+
+const hemi = new THREE.HemisphereLight('#b8c0e0', '#141624', .5); scene.add(hemi);
+const key = new THREE.DirectionalLight('#fff2dc', 1); key.castShadow = true;
+key.shadow.mapSize.set(MOBILE ? 1024 : 2048, MOBILE ? 1024 : 2048);
+Object.assign(key.shadow.camera, { left:-8, right:8, top:8, bottom:-8, near:1, far:40 });
+key.shadow.bias = -.0006; key.shadow.normalBias = .03; key.shadow.radius = 3;
+scene.add(key); scene.add(key.target);
+const p1 = new THREE.PointLight('#ffd9a0', 0, 8, 1.4); const p2 = new THREE.PointLight('#8fb8ff', 0, 8, 1.4); scene.add(p1, p2);
+
+function tex(cv){ const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.anisotropy = ANISO; return t; }
+
+const glowTex = (() => { const c = mk(128, 128), g = c.getContext('2d'), q = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  q.addColorStop(0, 'rgba(255,255,255,1)'); q.addColorStop(.25, 'rgba(255,255,255,.45)'); q.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = q; g.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(c); })();
+const beamTex = (() => { const c = mk(64, 256), g = c.getContext('2d'), d = g.createImageData(64, 256);
+  for(let y = 0; y < 256; y++) for(let x = 0; x < 64; x++){ const u = (x - 31.5) / 32, v = y / 255, a = Math.exp(-u * u * 5) * Math.pow(1 - v, 1.4) * (v < .04 ? v / .04 : 1), i = (y * 64 + x) * 4;
+    d.data[i] = d.data[i + 1] = d.data[i + 2] = 255; d.data[i + 3] = a * 255; }
+  g.putImageData(d, 0, 0); return new THREE.CanvasTexture(c); })();
+
+/* ---------- 책 ---------- */
+const book = new THREE.Group(); scene.add(book);
+const boardMat = new THREE.MeshStandardMaterial({ color:'#18203a', roughness:.85 });
+const edgeMat = new THREE.MeshStandardMaterial({ color:'#e2d6bf', roughness:.95 });
+const mkBox = (w, h, d, m, x, y) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(x, y, 0); b.castShadow = b.receiveShadow = true; book.add(b); return b; };
+const boardL = mkBox(W + .16, .06, H + .3, boardMat, -W / 2 - .08, -.25);
+const boardR = mkBox(W + .16, .06, H + .3, boardMat, W / 2 + .08, -.25);
+const stackL = mkBox(W - .03, .22, H - .03, edgeMat, -W / 2, -.11);
+const stackR = mkBox(W - .03, .22, H - .03, edgeMat, W / 2, -.11);
+const pageGeo = x => { const g = new THREE.PlaneGeometry(W, H); g.rotateX(-Math.PI / 2); g.translate(x, .003, 0); return g; };
+const pageMatL = new THREE.MeshStandardMaterial({ roughness:.95, color:'#ffffff' });
+const pageMatR = new THREE.MeshStandardMaterial({ roughness:.95, color:'#ffffff' });
+const pageL = new THREE.Mesh(pageGeo(-W / 2), pageMatL), pageR = new THREE.Mesh(pageGeo(W / 2), pageMatR);
+pageL.receiveShadow = pageR.receiveShadow = true; book.add(pageL, pageR);
+
+const SEG = 48, LEAF_Y = .012;
+const leafGeo = new THREE.PlaneGeometry(W, H, SEG, 1); leafGeo.rotateX(-Math.PI / 2);
+const leafBackGeo = new THREE.BufferGeometry(); leafBackGeo.setIndex(leafGeo.index);
+leafBackGeo.setAttribute('position', leafGeo.attributes.position); leafBackGeo.setAttribute('normal', leafGeo.attributes.normal);
+{ const uv = leafGeo.attributes.uv.clone(); for(let i = 0; i < uv.count; i++) uv.setX(i, 1 - uv.getX(i)); leafBackGeo.setAttribute('uv', uv); }
+const leafFrontMat = new THREE.MeshStandardMaterial({ roughness:.95, side:THREE.FrontSide });
+const leafBackMat = new THREE.MeshStandardMaterial({ roughness:.95, side:THREE.BackSide });
+const leafF = new THREE.Mesh(leafGeo, leafFrontMat), leafB = new THREE.Mesh(leafBackGeo, leafBackMat);
+[leafF, leafB].forEach(m => { m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; book.add(m); });
+function setLeaf(theta, curl){
+  const pos = leafGeo.attributes.position, xs = [0], ys = [0], dx = W / SEG; let px = 0, py = 0;
+  for(let i = 1; i <= SEG; i++){ const u = (i - .5) / SEG, phi = theta + curl * Math.pow(u, 1.6); px += Math.cos(phi) * dx; py += Math.sin(phi) * dx; xs.push(px); ys.push(py); }
+  for(let v = 0; v < pos.count; v++){ const c = v % (SEG + 1); pos.setX(v, xs[c]); pos.setY(v, ys[c] + LEAF_Y); }
+  pos.needsUpdate = true; leafGeo.computeVertexNormals();
+}
+function showLeaf(b){ leafF.visible = leafB.visible = b; }
+function setMap(m, t){ if(m.map !== t){ m.map = t; m.needsUpdate = true; } }
+
+const table = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), new THREE.MeshStandardMaterial({ color:'#15182a', roughness:1 }));
+table.rotation.x = -Math.PI / 2; table.position.y = -.29; scene.add(table);
+
+/* ---------- 먼지·거품·눈 입자 ---------- */
+const NP = MOBILE ? 260 : 420;
+const pGeo = new THREE.BufferGeometry(); { const pp = new Float32Array(NP * 3), sd = new Float32Array(NP * 3), r = rng(77);
+  for(let i = 0; i < NP; i++){ pp[i * 3] = (r() - .5) * 11.5; pp[i * 3 + 1] = r() * 7; pp[i * 3 + 2] = -3.6 + r() * 6.8; sd[i * 3] = r(); sd[i * 3 + 1] = r(); sd[i * 3 + 2] = r(); }
+  pGeo.setAttribute('position', new THREE.BufferAttribute(pp, 3)); pGeo.setAttribute('seed', new THREE.BufferAttribute(sd, 3)); }
+const pMat = new THREE.ShaderMaterial({ transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
+  uniforms:{ uTime:{ value:0 }, uOff:{ value:0 }, uColor:{ value:new THREE.Color('#ffe8c0') }, uSize:{ value:4 }, uWob:{ value:.4 }, uOp:{ value:.4 }, uPR:{ value:renderer.getPixelRatio() } },
+  vertexShader:`attribute vec3 seed; uniform float uTime,uOff,uSize,uWob,uOp,uPR; varying float vA;
+    void main(){ vec3 p=position; float hh=7.0; p.y=mod(position.y+uOff*(0.6+seed.x*0.8),hh);
+      p.x+=sin(uTime*0.3*(0.5+seed.y)+seed.z*6.283)*uWob; p.z+=cos(uTime*0.25*(0.5+seed.x)+seed.z*6.283)*uWob;
+      vec4 mv=modelViewMatrix*vec4(p,1.0); gl_Position=projectionMatrix*mv;
+      gl_PointSize=uSize*(0.45+seed.y)*uPR*(34.0/-mv.z);
+      vA=uOp*smoothstep(0.0,0.7,p.y)*smoothstep(hh,hh-1.6,p.y)*(0.55+0.45*sin(uTime*1.7*(0.5+seed.x)+seed.z*40.0)); }`,
+  fragmentShader:`uniform vec3 uColor; varying float vA; void main(){ float d=length(gl_PointCoord-0.5); float a=smoothstep(0.5,0.0,d); gl_FragColor=vec4(uColor,a*a*vA); }` });
+const points = new THREE.Points(pGeo, pMat); points.renderOrder = 30; points.frustumCulled = false; scene.add(points);
+
+/* =========================================================
+   조각 · 빛 · 물 만들기
+   ========================================================= */
+const PXU = 110;
+function makePiece(p){
+  const cw = Math.max(8, Math.min(1400, Math.round(p.w * PXU))), ch = Math.max(8, Math.min(1400, Math.round(p.h * PXU))), S = {};
+  const cv = mk(cw, ch), g = cv.getContext('2d');
+  g.save(); g.scale(cw / p.w, ch / p.h); p.draw(g, p.w, p.h, S); g.restore();
+  finishPaper(cv, g, p.rim || '#f3ead9', 2.4);
+  const map = tex(cv);
+  const mat = new THREE.MeshStandardMaterial({ map, transparent:true, alphaTest:.06, side:THREE.DoubleSide, roughness:.9, metalness:0, opacity:0 });
+  if(p.glow){ const ec = mk(cw, ch), eg = ec.getContext('2d'); eg.fillStyle = '#000'; eg.fillRect(0, 0, cw, ch);
+    eg.save(); eg.scale(cw / p.w, ch / p.h); p.glow(eg, p.w, p.h, S); eg.restore();
+    mat.emissive = new THREE.Color('#ffffff'); mat.emissiveMap = tex(ec); mat.emissiveIntensity = p.ei ?? 1; }
+  const geo = new THREE.PlaneGeometry(p.w, p.h); geo.translate(0, p.h / 2, 0);
+  const mesh = new THREE.Mesh(geo, mat); mesh.castShadow = true; mesh.receiveShadow = true;
+  mesh.customDepthMaterial = new THREE.MeshDepthMaterial({ depthPacking:THREE.RGBADepthPacking, map, alphaTest:.5 });
+  const hinge = new THREE.Group(); hinge.rotation.order = 'YXZ'; hinge.position.set(p.x || 0, Math.max(p.y0 || 0, .006), p.z || 0); hinge.rotation.y = p.yaw || 0; hinge.add(mesh);
+  hinge.rotation.x = -Math.PI / 2; mesh.visible = false;
+  return { hinge, mesh, mat, spec:p, base:hinge.position.clone(), f:0, f0:0 };
+}
+function makeBeam(b){
+  const A = new THREE.Vector3(...b.from), B = new THREE.Vector3(...b.to), len = A.distanceTo(B);
+  const geo = new THREE.PlaneGeometry(b.w, len); geo.translate(0, -len / 2, 0);
+  const pa = geo.attributes.position; for(let i = 0; i < pa.count; i++){ const y = pa.getY(i); pa.setX(i, pa.getX(i) * (y < -len / 2 ? (b.spread || 2) : .6)); }
+  const mat = new THREE.MeshBasicMaterial({ map:beamTex, color:new THREE.Color(b.c), transparent:true, opacity:0, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide, fog:false });
+  const m = new THREE.Mesh(geo, mat); m.renderOrder = 20;
+  const y = A.clone().sub(B).normalize(), zf = b.flat ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(0, .6, 1).normalize();
+  const x = new THREE.Vector3().crossVectors(y, zf); if(x.lengthSq() < 1e-5) x.set(1, 0, 0); x.normalize();
+  const z = new THREE.Vector3().crossVectors(x, y).normalize();
+  m.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z)); m.position.copy(A);
+  return { m, spec:b, ph:Math.random() * 6 };
+}
+function makeWater(w){
+  const geo = new THREE.PlaneGeometry(w.w, w.d, 36, 26); geo.rotateX(-Math.PI / 2);
+  const col = new THREE.Color(w.c);
+  const mat = new THREE.MeshStandardMaterial({ color:col.clone().multiplyScalar(.55), emissive:col.clone().multiplyScalar(.12), transparent:true, opacity:0, roughness:.3, metalness:.35, side:THREE.DoubleSide, depthWrite:false });
+  const m = new THREE.Mesh(geo, mat); m.position.set(w.x || 0, 0, w.z || 0); m.renderOrder = 10;
+  return { m, spec:w, base:Float32Array.from(geo.attributes.position.array) };
+}
+
+const objs = {};
+function buildScene(i){
+  const s = SC[i], grp = new THREE.Group(); grp.visible = false; book.add(grp);
+  const o = { i, grp, pieces:[], glows:[], beams:[], waters:[], state:'hidden', timer:0, tOpen:0, gf:0, gf0:0, maxDelay:0 };
+  s.pieces.forEach((p, k) => { const pc = makePiece(p); pc.delay = p.d ?? k * .12; o.maxDelay = Math.max(o.maxDelay, pc.delay); grp.add(pc.hinge); o.pieces.push(pc); });
+  (s.glows || []).forEach(gs => { const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map:glowTex, color:new THREE.Color(gs.c), transparent:true, opacity:0, depthWrite:false, blending:THREE.AdditiveBlending, fog:false }));
+    spr.position.set(gs.x, gs.y, gs.z); spr.renderOrder = 21; grp.add(spr); o.glows.push({ spr, spec:gs, ph:Math.random(), fired:false }); });
+  (s.beams || []).forEach(b => { const bm = makeBeam(b); grp.add(bm.m); o.beams.push(bm); });
+  (s.water || []).forEach(w => { const wm = makeWater(w); grp.add(wm.m); o.waters.push(wm); });
+  return o;
+}
+function disposeScene(o){
+  book.remove(o.grp);
+  o.grp.traverse(n => { if(n.geometry) n.geometry.dispose(); if(n.material){ const m = n.material; if(m.map && m.map !== glowTex && m.map !== beamTex) m.map.dispose(); if(m.emissiveMap) m.emissiveMap.dispose(); m.dispose(); }
+    if(n.customDepthMaterial) n.customDepthMaterial.dispose(); });
+}
+const RISE = REDUCED ? .5 : 1.15, FOLD = REDUCED ? .3 : .55;
+function riseScene(o){ o.state = 'rising'; o.timer = 0; o.tOpen = 0; o.grp.visible = true; o.glows.forEach(g => g.fired = false); }
+function foldScene(o){ if(o.state === 'hidden') return; o.pieces.forEach(pc => pc.f0 = pc.f); o.gf0 = o.gf; o.state = 'folding'; o.timer = 0; }
+function updateScene(o, dt, t){
+  if(o.state === 'hidden') return;
+  o.timer += dt; if(o.state !== 'folding') o.tOpen += dt;
+  const fold = o.state === 'folding', fk = fold ? 1 - ease(clamp(o.timer / FOLD)) : 1;
+  for(const pc of o.pieces){
+    let f = fold ? pc.f0 * fk : easeBack(clamp((o.timer - pc.delay * (REDUCED ? .4 : 1)) / RISE));
+    if(!fold && o.timer - pc.delay * (REDUCED ? .4 : 1) <= 0) f = 0;
+    pc.f = f; pc.hinge.rotation.x = -(1 - f) * Math.PI / 2;
+    const vis = f > .004; pc.mesh.visible = vis; pc.mat.opacity = clamp(f * 5);
+    if(vis && pc.spec.anim) pc.spec.anim(pc, t, o.tOpen, f);
+  }
+  o.gf = fold ? o.gf0 * fk : ease(clamp((o.timer - .25) / 1.6));
+  const gf = o.gf;
+  for(const G of o.glows){ const s = G.spec; let a = s.op * gf;
+    if(s.seq != null){ const k = clamp((o.tOpen - s.seq) / .9); a *= k; if(k > 0 && !G.fired && !fold){ G.fired = true; Sfx.chime(); } }
+    if(s.pulse) a *= .72 + .28 * Math.sin(t * s.pulse * 2 + G.ph * 6);
+    if(s.flicker) a *= .8 + .2 * Math.sin(t * 13 + G.ph * 9) * Math.sin(t * 7.3 + G.ph * 17);
+    if(s.rise){ const fr = (t * .12 + G.ph) % 1; G.spr.position.y = s.y + fr * 3.4; G.spr.position.x = s.x + Math.sin(t * .5 + G.ph * 6) * .3; a *= Math.sin(fr * Math.PI); }
+    const sc = s.s * (.55 + .45 * gf); G.spr.scale.set(sc, sc, 1); G.spr.material.opacity = a; G.spr.visible = a > .003; }
+  for(const B of o.beams){ B.m.material.opacity = B.spec.op * gf * (.82 + .18 * Math.sin(t * .7 + B.ph)); B.m.visible = gf > .01; }
+  for(const Wt of o.waters){ const s = Wt.spec, pa = Wt.m.geometry.attributes.position, b = Wt.base;
+    Wt.m.visible = gf > .01; if(!Wt.m.visible) continue;
+    Wt.m.position.y = s.level * gf; Wt.m.material.opacity = s.op * gf;
+    for(let i = 0; i < pa.count; i++){ const x = b[i * 3], z = b[i * 3 + 2]; pa.setY(i, .028 * (Math.sin(x * 1.6 + t * 1.2) + .6 * Math.sin(z * 2.1 - t * .85))); }
+    pa.needsUpdate = true; Wt.m.geometry.computeVertexNormals(); }
+  if(o.state === 'rising' && o.timer > o.maxDelay + RISE + .1) o.state = 'open';
+  if(fold && o.timer > FOLD + .05){ o.state = 'hidden'; o.grp.visible = false; }
+}
+
+/* ---------- 펼침면 종이 ---------- */
+const spreads = {};
+function wrapText(g, text, maxW){ const words = text.split(' '), lines = []; let cur = '';
+  words.forEach(w => { const t = cur ? cur + ' ' + w : w; if(g.measureText(t).width > maxW && cur){ lines.push(cur); cur = w; } else cur = t; }); if(cur) lines.push(cur); return lines; }
+function makeSpread(i){
+  const s = SC[i], cw = 2048, ch = 1434, u = cw / 10, c = mk(cw, ch), g = c.getContext('2d');
+  g.fillStyle = '#efe5d1'; g.fillRect(0, 0, cw, ch);
+  const r = rng(100 + i); g.strokeStyle = 'rgba(120,90,60,.07)'; g.lineWidth = 1.2;
+  for(let k = 0; k < 420; k++){ const x = r() * cw, y = r() * ch, l = 6 + r() * 18, a = r() * TAU; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + Math.cos(a) * l * .5 + 3, y + Math.sin(a) * l * .5, x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); }
+  g.fillStyle = g.createPattern(grainCv, 'repeat'); g.fillRect(0, 0, cw, ch);
+  const gc = mk(cw, ch), gg = gc.getContext('2d'); gg.save(); gg.scale(u, u); s.ground(gg); gg.restore();
+  gg.globalCompositeOperation = 'destination-in';
+  gg.fillStyle = D.lg(gg, 0, 0, 0, ch, [[0,'#000'],[.72,'#000'],[.85,'rgba(0,0,0,0)']]); gg.fillRect(0, 0, cw, ch);
+  gg.fillStyle = D.lg(gg, 0, 0, cw, 0, [[0,'rgba(0,0,0,0)'],[.035,'#000'],[.965,'#000'],[1,'rgba(0,0,0,0)']]); gg.fillRect(0, 0, cw, ch);
+  gg.fillStyle = D.lg(gg, 0, 0, 0, ch, [[0,'rgba(0,0,0,0)'],[.03,'#000'],[1,'#000']]); gg.fillRect(0, 0, cw, ch);
+  g.globalCompositeOperation = 'multiply'; g.globalAlpha = .92; g.drawImage(gc, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+  g.fillStyle = D.lg(g, cw / 2 - 170, 0, cw / 2 + 170, 0, [[0,'rgba(70,45,25,0)'],[.5,'rgba(70,45,25,.34)'],[1,'rgba(70,45,25,0)']]); g.fillRect(cw / 2 - 170, 0, 340, ch);
+  g.fillStyle = D.lg(g, 0, 0, 0, ch, [[0,'rgba(70,45,25,.12)'],[.05,'rgba(70,45,25,0)'],[.95,'rgba(70,45,25,0)'],[1,'rgba(70,45,25,.14)']]); g.fillRect(0, 0, cw, ch);
+  const ink = '#3d302a', en = LANG === 'en', tx = TX(i), px = k => Math.round(u * k);
+  const KF = '"Gowun Batang", serif', EF = '"Cormorant Garamond", Georgia, serif';
+  g.textBaseline = 'alphabetic'; g.textAlign = 'left'; g.fillStyle = 'rgba(61,48,42,.7)';
+  g.font = en ? `italic 400 ${px(.15)}px ${EF}` : `400 ${px(.13)}px ${KF}`; g.fillText(en ? `Chapter ${i + 1}` : `제${i + 1}장`, u * .5, u * 6.2);
+  g.fillStyle = ink; g.font = en ? `500 ${px(.3)}px ${EF}` : `700 ${px(.26)}px ${KF}`; g.fillText(tx.title, u * .5, u * 6.55);
+  g.fillStyle = 'rgba(61,48,42,.35)'; g.fillRect(u * .5, u * 6.66, u * .7, 2);
+  g.textAlign = 'right'; g.fillStyle = 'rgba(61,48,42,.82)'; g.font = en ? `italic 400 ${px(.165)}px ${EF}` : `400 ${px(.135)}px ${KF}`;
+  const lines = wrapText(g, tx.line, u * 3.7), ly = s.end ? 6.05 : 6.3;
+  lines.forEach((ln, k) => g.fillText(ln, u * 9.5, u * (ly + k * .21)));
+  if(s.end){ g.fillStyle = ink; g.font = en ? `italic 500 ${px(.28)}px ${EF}` : `700 ${px(.24)}px ${KF}`; g.fillText(en ? '— The End —' : '— 끝 —', u * 9.5, u * 6.62); }
+  g.textAlign = 'center'; g.fillStyle = 'rgba(61,48,42,.55)'; g.font = `italic 500 ${Math.round(u * .15)}px "Cormorant Garamond", Georgia, serif`;
+  g.fillText(String(i * 2 + 1), u * 2.5, u * 6.9); g.fillText(String(i * 2 + 2), u * 7.5, u * 6.9);
+  const L = mk(cw / 2, ch), R = mk(cw / 2, ch); L.getContext('2d').drawImage(c, 0, 0); R.getContext('2d').drawImage(c, -cw / 2, 0);
+  return { L:tex(L), R:tex(R) };
+}
+function makeCover(){
+  const cw = 1024, ch = 1434, c = mk(cw, ch), g = c.getContext('2d');
+  g.fillStyle = D.lg(g, 0, 0, 0, ch, [[0,'#1c2748'],[1,'#0f152b']]); g.fillRect(0, 0, cw, ch);
+  const r = rng(11); g.globalAlpha = .05; for(let y = 0; y < ch; y += 3){ g.fillStyle = r() < .5 ? '#fff' : '#000'; g.fillRect(0, y, cw, 1); }
+  for(let x = 0; x < cw; x += 3){ g.fillStyle = r() < .5 ? '#fff' : '#000'; g.fillRect(x, 0, 1, ch); } g.globalAlpha = 1;
+  g.fillStyle = D.lg(g, 0, 0, 140, 0, [[0,'rgba(0,0,0,.5)'],[1,'rgba(0,0,0,0)']]); g.fillRect(0, 0, 140, ch);
+  const gold = D.lg(g, 0, 0, cw, ch, [[0,'#f3dc9a'],[.5,'#b8904a'],[1,'#e8c77e']]);
+  g.strokeStyle = gold; g.lineWidth = 3; g.strokeRect(100, 90, 834, 1254); g.lineWidth = 1.2; g.strokeRect(116, 106, 802, 1222);
+  g.fillStyle = gold; D.stars(g, cw, 420, 40, 12, '#e8c77e', 2.2);
+  g.textAlign = 'center'; g.fillStyle = gold;
+  g.font = 'italic 500 250px "Cormorant Garamond", Georgia, serif'; g.fillText('A.I.', 518, 600);
+  const en = LANG === 'en', EF = '"Cormorant Garamond", Georgia, serif';
+  g.font = en ? `italic 500 60px ${EF}` : '400 50px "Gowun Batang", serif'; g.fillText(en ? 'The Boy Who Learned to Love' : '사랑을 배운 아이', 518, 720);
+  g.fillRect(418, 760, 200, 2);
+  g.font = en ? `500 30px ${EF}` : '400 26px "Gowun Batang", serif'; g.fillStyle = 'rgba(232,199,126,.85)'; g.fillText(en ? 'A Pop-up Book  ·  Fourteen Scenes' : '입체 그림책 · 열네 개의 장면', 518, 815);
+  g.strokeStyle = gold; g.lineWidth = 2.5; g.beginPath(); g.arc(518, 1040, 120, 0, TAU); g.stroke();
+  g.save(); g.translate(518, 1040); g.scale(100, 100); D.person(g, -.25, 1.05, 1.1, { kind:'child', pose:'reach', dir:1, color:gold }); D.star(g, gold, .5, -.55, .12); g.restore();
+  g.font = en ? `italic 400 28px ${EF}` : '400 22px "Gowun Batang", serif'; g.fillStyle = 'rgba(232,199,126,.7)';
+  g.fillText(en ? 'A tribute to the film A.I. (2001)' : '영화 「A.I.」(2001)에 바치는 헌정', 518, 1270);
+  return tex(c);
+}
+function spreadOf(i){ return spreads[i] || (spreads[i] = makeSpread(i)); }
+function ensure(i){ if(i < 0 || i >= SC.length) return; spreadOf(i); if(!objs[i]) objs[i] = buildScene(i); }
+function prune(keep){ const k = new Set(keep);
+  Object.keys(objs).forEach(i => { i = +i; if(!k.has(i) && objs[i].state === 'hidden'){ disposeScene(objs[i]); delete objs[i]; } });
+  Object.keys(spreads).forEach(i => { i = +i; if(!k.has(i)){ spreads[i].L.dispose(); spreads[i].R.dispose(); delete spreads[i]; } }); }
+
+/* =========================================================
+   빛과 분위기 전환
+   ========================================================= */
+const C3 = c => new THREE.Color(c), V3 = a => new THREE.Vector3(...a);
+const COVER_LOOK = { bg:'#0a0c16', hemi:['#b8c0e0','#141624',.55], key:['#fff2dc',1.05,[4,9,6]], p1:['#ffd9a0',.9,[3,3,2],9], p2:['#8fb8ff',.5,[-2,3,2],8], dust:['#ffe8c0',4,.08,.5,.4] };
+function lookOf(l){ return { bg:C3(l.bg), fog:l.fog || 1, hs:C3(l.hemi[0]), hg:C3(l.hemi[1]), hi:l.hemi[2], kc:C3(l.key[0]), ki:l.key[1], kp:V3(l.key[2]).normalize().multiplyScalar(14),
+  p1c:C3(l.p1[0]), p1i:l.p1[1], p1p:V3(l.p1[2]), p1d:l.p1[3], p2c:C3(l.p2[0]), p2i:l.p2[1], p2p:V3(l.p2[2]), p2d:l.p2[3],
+  dc:C3(l.dust[0]), ds:l.dust[1], dsp:l.dust[2], dw:l.dust[3], dop:l.dust[4] }; }
+const LK = lookOf(COVER_LOOK); let LT = lookOf(COVER_LOOK);
+const tableCol = new THREE.Color();
+function updateLook(dt){
+  const k = 1 - Math.exp(-dt * 1.6), n = (a, b) => a + (b - a) * k;
+  LK.bg.lerp(LT.bg, k); LK.hs.lerp(LT.hs, k); LK.hg.lerp(LT.hg, k); LK.kc.lerp(LT.kc, k); LK.p1c.lerp(LT.p1c, k); LK.p2c.lerp(LT.p2c, k); LK.dc.lerp(LT.dc, k);
+  LK.kp.lerp(LT.kp, k); LK.p1p.lerp(LT.p1p, k); LK.p2p.lerp(LT.p2p, k);
+  ['fog','hi','ki','p1i','p1d','p2i','p2d','ds','dsp','dw','dop'].forEach(f => LK[f] = n(LK[f], LT[f]));
+  scene.background.copy(LK.bg); scene.fog.color.copy(LK.bg);
+  tableCol.copy(LK.bg).multiplyScalar(.6); table.material.color.copy(tableCol);
+  hemi.color.copy(LK.hs); hemi.groundColor.copy(LK.hg); hemi.intensity = LK.hi;
+  key.color.copy(LK.kc); key.intensity = LK.ki; key.position.copy(LK.kp);
+  p1.color.copy(LK.p1c); p1.intensity = LK.p1i; p1.position.copy(LK.p1p); p1.distance = LK.p1d;
+  p2.color.copy(LK.p2c); p2.intensity = LK.p2i; p2.position.copy(LK.p2p); p2.distance = LK.p2d;
+  const u = pMat.uniforms; u.uColor.value.copy(LK.dc); u.uSize.value = LK.ds; u.uWob.value = LK.dw; u.uOp.value = LK.dop;
+  u.uOff.value += LK.dsp * dt * (REDUCED ? .4 : 1);
+}
+
+/* =========================================================
+   카메라
+   ========================================================= */
+let camMode = 'cover', camDist = 20; const camPos = new THREE.Vector3(), camTgt = new THREE.Vector3(), mouse = { x:0, y:0, sx:0, sy:0 };
+const CAM_DIR = new THREE.Vector3(0, .7, 1).normalize();
+function camGoal(){
+  const aspect = Math.max(1, innerWidth) / Math.max(1, innerHeight), t = Math.tan(cam.fov * Math.PI / 360);
+  const cover = camMode === 'cover', tgt = cover ? new THREE.Vector3(2.5, .2, .4) : new THREE.Vector3(0, 1.35, .2);
+  const nw = cover ? 7.2 : (aspect < .7 ? 10.4 : 11.2), nh = cover ? 9.2 : 10.4;
+  const d = Math.max(nw / 2 / (t * aspect), nh / 2 / t);
+  tgt.y -= d * t * (cover ? .24 : .13);
+  return { pos:tgt.clone().addScaledVector(CAM_DIR, d), tgt, d };
+}
+function updateCamera(dt, T, snap){
+  const gl = camGoal(), k = snap ? 1 : 1 - Math.exp(-dt * 1.3);
+  camPos.lerp(gl.pos, k); camTgt.lerp(gl.tgt, k); camDist = gl.d;
+  mouse.sx += (mouse.x - mouse.sx) * (1 - Math.exp(-dt * 2)); mouse.sy += (mouse.y - mouse.sy) * (1 - Math.exp(-dt * 2));
+  const drift = REDUCED ? 0 : 1;
+  cam.position.set(camPos.x + (mouse.sx * .9 + Math.sin(T * .13) * .25) * drift, camPos.y + (-mouse.sy * .5 + Math.sin(T * .17) * .15) * drift, camPos.z);
+  cam.lookAt(camTgt);
+  scene.fog.near = camDist - 2 + 4 * LK.fog; scene.fog.far = camDist + 30 * LK.fog;
+}
+function resize(){ const w = Math.max(1, innerWidth), h = Math.max(1, innerHeight); renderer.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); pMat.uniforms.uPR.value = renderer.getPixelRatio(); }
+addEventListener('resize', resize);
+addEventListener('pointermove', e => { if(e.pointerType === 'mouse'){ mouse.x = e.clientX / innerWidth * 2 - 1; mouse.y = e.clientY / innerHeight * 2 - 1; } });
+
+/* =========================================================
+   소리: 배경음악과 효과음 (Web Audio로 합성)
+   ========================================================= */
+const MODES = { major:[0,2,4,5,7,9,11], minor:[0,2,3,5,7,8,10], dorian:[0,2,3,5,7,9,10], lydian:[0,2,4,6,7,9,11], mixolydian:[0,2,4,5,7,9,10] };
+const dm = (m, d) => { const sc = MODES[m.mode], o = Math.floor(d / 7); return m.root + sc[((d % 7) + 7) % 7] + 12 * o; };
+const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+const Aud = {
+  ctx:null, on:true, duckOn:false,
+  init(){
+    if(this.ctx){ if(this.ctx.state !== 'running') this.ctx.resume(); return; }
+    const AC = window.AudioContext || window.webkitAudioContext; if(!AC) return;
+    const c = this.ctx = new AC();
+    const comp = c.createDynamicsCompressor(); comp.threshold.value = -20; comp.knee.value = 18; comp.ratio.value = 3.5; comp.attack.value = .01; comp.release.value = .35;
+    this.master = c.createGain(); this.master.gain.value = .85; this.master.connect(comp); comp.connect(c.destination);
+    this.rev = c.createConvolver(); this.rev.buffer = this.impulse(4.2, 2.4); const rv = c.createGain(); rv.gain.value = .8; this.rev.connect(rv); rv.connect(this.master);
+    this.mus = c.createGain(); this.mus.gain.value = 0; this.mus.connect(this.master); const ms = c.createGain(); ms.gain.value = .65; this.mus.connect(ms); ms.connect(this.rev);
+    this.fx = c.createGain(); this.fx.gain.value = .7; this.fx.connect(this.master); const fs = c.createGain(); fs.gain.value = .35; this.fx.connect(fs); fs.connect(this.rev);
+    const n = c.sampleRate * 2, b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0); for(let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; this.noise = b;
+    if(c.state !== 'running') c.resume();
+    this.level();
+  },
+  impulse(sec, decay){ const c = this.ctx, n = Math.floor(c.sampleRate * sec), b = c.createBuffer(2, n, c.sampleRate);
+    for(let ch = 0; ch < 2; ch++){ const d = b.getChannelData(ch); for(let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, decay); } return b; },
+  level(){ if(!this.ctx) return; const v = this.on ? (this.duckOn ? .26 : .5) : 0; this.mus.gain.setTargetAtTime(v, this.ctx.currentTime, .7); },
+  duck(b){ this.duckOn = b; this.level(); },
+  setOn(b){ this.on = b; this.level(); }
+};
+const Music = {
+  mood:null, nextBar:0, nextNote:0, barIdx:0, md:9, deg:0, timer:null,
+  start(m){ if(!Aud.ctx) return; this.mood = m; const t = Aud.ctx.currentTime + .1; this.nextBar = t; this.nextNote = t + 1.6;
+    if(!this.timer) this.timer = setInterval(() => this.tick(), 120); },
+  setMood(m){ if(!Aud.ctx) return; if(!this.mood){ this.start(m); return; } this.mood = m; this.barIdx = 0; this.nextBar = Math.min(this.nextBar, Aud.ctx.currentTime + .4); },
+  tick(){ const c = Aud.ctx; if(!c || !this.mood) return; const now = c.currentTime;
+    if(this.nextBar < now - 2) this.nextBar = now + .1; if(this.nextNote < now - 2) this.nextNote = now + .2;
+    while(this.nextBar < now + 1.2){ this.bar(this.nextBar); this.nextBar += this.mood.bar; }
+    while(this.nextNote < now + 1.2){ this.note(this.nextNote); this.nextNote += this.mood.beat * (Math.random() < .22 ? 2 : 1); } },
+  bar(t){ const m = this.mood, deg = m.prog[this.barIdx++ % m.prog.length]; this.deg = deg; const dur = m.bar + 3.6;
+    [deg, deg + 2, deg + 4, deg + 6].forEach((d, i) => this.pad(t + i * .05, dm(m, d) + 12, dur, .03 - i * .004, m.bright));
+    this.bass(t, dm(m, deg) - 12, dur); },
+  pad(t, midi, dur, vol, cut){ const c = Aud.ctx, f = mtof(midi), g = c.createGain(), lp = c.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = cut; lp.Q.value = .5;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 2.4); g.gain.setValueAtTime(vol, t + dur - 3.2); g.gain.linearRampToValueAtTime(0, t + dur);
+    [[-7,'sawtooth',1],[7,'sawtooth',1],[0,'triangle',.5]].forEach(([dt, ty, mul]) => { const o = c.createOscillator(); o.type = ty; o.frequency.value = f * mul; o.detune.value = dt; o.connect(lp); o.start(t); o.stop(t + dur + .05); });
+    lp.connect(g); g.connect(Aud.mus); },
+  bass(t, midi, dur){ const c = Aud.ctx, g = c.createGain(), o = c.createOscillator(); o.type = 'sine'; o.frequency.value = mtof(midi);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.07, t + 1.6); g.gain.setValueAtTime(.07, t + dur - 3); g.gain.linearRampToValueAtTime(0, t + dur);
+    o.connect(g); g.connect(Aud.mus); o.start(t); o.stop(t + dur + .05); },
+  note(t){ const m = this.mood; if(Math.random() < m.rest) return;
+    const chord = [this.deg, this.deg + 2, this.deg + 4].map(d => ((d % 7) + 7) % 7);
+    for(let k = 0; k < 4; k++){ this.md += [-2,-1,-1,1,1,2,0,3,-3][Math.floor(Math.random() * 9)]; this.md = Math.max(7, Math.min(16, this.md));
+      if(chord.includes(((this.md % 7) + 7) % 7) || Math.random() < .3) break; }
+    this.box(t, dm(m, this.md) + 12, .07);
+    if(Math.random() < .12) this.box(t + m.beat * .5, dm(m, this.md + 2) + 12, .04); },
+  box(t, midi, vol){ const c = Aud.ctx, f = mtof(midi), g = c.createGain(), o = c.createOscillator(), o2 = c.createOscillator(), g2 = c.createGain(), out = c.createGain();
+    o.type = 'sine'; o.frequency.value = f; o2.type = 'sine'; o2.frequency.value = f * 4.01;
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .006); g.gain.exponentialRampToValueAtTime(.0001, t + 2.8);
+    g2.gain.setValueAtTime(.0001, t); g2.gain.exponentialRampToValueAtTime(vol * .3, t + .004); g2.gain.exponentialRampToValueAtTime(.0001, t + .5);
+    o.connect(g); o2.connect(g2); g.connect(out); g2.connect(out);
+    if(c.createStereoPanner){ const p = c.createStereoPanner(); p.pan.value = (Math.random() - .5) * .7; out.connect(p); p.connect(Aud.mus); } else out.connect(Aud.mus);
+    o.start(t); o2.start(t); o.stop(t + 2.9); o2.stop(t + .6); }
+};
+const Sfx = {
+  noise(t, dur, type, f0, f1, vol, q){ const c = Aud.ctx, s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+    s.buffer = Aud.noise; f.type = type; f.Q.value = q || .7; f.frequency.setValueAtTime(f0, t); if(f1) f.frequency.exponentialRampToValueAtTime(f1, t + dur * .45);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + dur * .18); g.gain.linearRampToValueAtTime(0, t + dur);
+    s.connect(f); f.connect(g); g.connect(Aud.fx); s.start(t, Math.random() * .8); s.stop(t + dur + .05); },
+  turn(){ if(!Aud.ctx) return; const t = Aud.ctx.currentTime + .02; this.noise(t, 1.3, 'bandpass', 700, 2600, .3, .7); this.noise(t + .2, .5, 'highpass', 3000, 0, .06); },
+  land(){ if(!Aud.ctx) return; this.noise(Aud.ctx.currentTime + .01, .28, 'lowpass', 420, 0, .35, .5); },
+  pop(){ if(!Aud.ctx || !Music.mood) return; const t = Aud.ctx.currentTime + .05, m = Music.mood;
+    this.noise(t, .16, 'highpass', 1800, 0, .1); [0, 2, 4, 7].forEach((d, i) => Music.box(t + .12 + i * .09, dm(m, Music.deg + d) + 24, .045)); },
+  chime(){ if(!Aud.ctx || !Music.mood) return; Music.box(Aud.ctx.currentTime + .02, dm(Music.mood, Music.deg + 7 + Math.floor(Math.random() * 5)) + 24, .06); }
+};
+
+/* =========================================================
+   낭독: Web Speech API 여성 목소리
+   ========================================================= */
+const Narr = {
+  supported:'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window,
+  on:true, vc:{}, pc:{}, token:0, timer:null, utts:[],
+  /* 언어별로 여성 목소리만 고른다. 남성 목소리밖에 없으면 자막으로 대신한다. */
+  VOICES:{
+    ko:{ lang:/^ko/i, name:/korean|한국/i, male:/InJoon|Hyunsu|Gook|Bong|Jinho|Minjun|Hyunwoo|\bMale\b|남성|SMTm/i,
+         pref:[/SunHi/i, /Heami/i, /Yuna/i, /Google.*(한국|Korean)/i, /Sora|Seoyeon|Jimin|Yujin|Hyejin|Hana|Sumi|Female|여성|SMTf/i] },
+    en:{ lang:/^en/i, name:/^$/, male:/David|Mark|Guy|Ryan|Christopher|Eric|Roger|Steffan|Daniel|\bAlex\b|Fred|\bTom\b|Aaron|Arthur|Andrew|Brian|George|Thomas|Oliver|Rishi|\bMale\b/i,
+         pref:[/Aria/i, /Jenny/i, /Sonia/i, /Libby/i, /Michelle/i, /\bAna\b/i, /Emma/i, /Samantha/i, /Google US English/i, /Google UK English Female/i, /Zira/i,
+               /Karen|Moira|Tessa|Serena|Victoria|Allison|Ava|Susan|Hazel|Natasha|Clara|Female/i] }
+  },
+  pick(L){
+    L = L || LANG; if(!this.supported) return null; if(this.vc[L]) return this.vc[L];
+    const cfg = this.VOICES[L], list = speechSynthesis.getVoices().filter(v => cfg.lang.test(v.lang) || cfg.name.test(v.name)); if(!list.length) return null;
+    for(const re of cfg.pref){ const v = list.find(v => re.test(v.name) && !cfg.male.test(v.name)); if(v){ this.vc[L] = v; this.pc[L] = 1.02; return v; } }
+    const v = list.find(v => !cfg.male.test(v.name)); if(v){ this.vc[L] = v; this.pc[L] = 1.1; return v; }
+    return null;
+  },
+  prime(){ if(!this.supported) return; try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } catch(e){} },
+  stop(){ this.token++; clearTimeout(this.timer); let busy = false;
+    if(this.supported) try { busy = speechSynthesis.speaking || speechSynthesis.pending; if(busy) speechSynthesis.cancel(); } catch(e){}
+    Aud.duck(false); return busy; },
+  play(lines, onLine, onDone){
+    const wasBusy = this.stop(), tok = this.token; let i = 0;
+    const next = () => {
+      if(tok !== this.token) return;
+      if(i >= lines.length){ Aud.duck(false); onDone && onDone(); return; }
+      const line = lines[i]; onLine(i, line); i++;
+      let done = false; const fin = () => { if(done || tok !== this.token) return; done = true; clearTimeout(this.timer); this.timer = setTimeout(next, 650); };
+      const v = this.on ? this.pick() : null, en = LANG === 'en';
+      if(v){
+        const u = new SpeechSynthesisUtterance(line); u.voice = v; u.lang = v.lang; u.rate = en ? .9 : .92; u.pitch = this.pc[LANG] || 1; u.volume = 1;
+        u.onend = fin; u.onerror = fin; this.utts.push(u); if(this.utts.length > 30) this.utts.splice(0, 15);
+        Aud.duck(true); try { speechSynthesis.resume(); speechSynthesis.speak(u); } catch(e){ fin(); }
+        this.timer = setTimeout(fin, 3500 + line.length * (en ? 115 : 240));
+      } else {
+        Aud.duck(false); this.timer = setTimeout(fin, 1800 + line.length * (en ? 55 : 105));
+      }
+    };
+    /* 방금 cancel()한 직후 곧바로 speak()하면 첫 문장이 버려지는 브라우저가 있어 잠깐 기다린다 */
+    if(wasBusy) this.timer = setTimeout(next, 180); else next();
+  }
+};
+if(Narr.supported){ speechSynthesis.onvoiceschanged = () => { Narr.pick('ko'); Narr.pick('en'); }; Narr.pick('ko'); Narr.pick('en'); }
+
+/* =========================================================
+   책장 넘기기 제어
+   ========================================================= */
+const $ = s => document.querySelector(s);
+const ui = { cap:$('#capText'), no:$('#chapNo'), ti:$('#chapTitle'), dots:$('#dots'), count:$('#count'), prev:$('#prevBtn'), next:$('#nextBtn'), again:$('#againBtn'),
+  music:$('#tgMusic'), voice:$('#tgVoice'), auto:$('#tgAuto'), replay:$('#tgReplay'), note:$('#voiceNote'), open:$('#openBtn'), loading:$('#loading'),
+  home:$('#homeBtn'), lang:$('#tgLang') };
+const ST = { cur:-1, busy:false, turn:null, auto:true, started:false };
+let autoTimer = null, capTimer = null, noteTimer = null;
+
+function setCaption(t){ ui.cap.classList.add('out'); clearTimeout(capTimer); capTimer = setTimeout(() => { ui.cap.textContent = t; if(t) ui.cap.classList.remove('out'); }, REDUCED ? 0 : 320); }
+function setChapter(i){ ui.no.textContent = `${String(i + 1).padStart(2, '0')} / ${SC.length}`; ui.ti.textContent = TX(i).title; ui.count.textContent = `${i + 1} / ${SC.length}`;
+  [...ui.dots.children].forEach((d, k) => { d.classList.toggle('on', k === i); d.setAttribute('aria-current', k === i ? 'page' : 'false'); });
+  ui.prev.disabled = i <= 0; ui.next.hidden = i >= SC.length - 1; ui.again.hidden = true; }
+SC.forEach((s, i) => { const b = document.createElement('button'); b.className = 'dot'; b.onclick = () => go(i); ui.dots.appendChild(b); });
+
+/* to === -1 은 책을 덮고 표지로 돌아가는 넘김 */
+function go(to){
+  if(!ST.started || ST.busy || to === ST.cur || to < -1 || to >= SC.length) return;
+  clearTimeout(autoTimer); Narr.stop(); setCaption('');
+  const from = ST.cur, fwd = to > from, toCover = to < 0;
+  ensure(toCover ? 0 : to);
+  if(from >= 0 && objs[from]) foldScene(objs[from]);
+  setMap(leafFrontMat, fwd ? (from < 0 ? coverTex : spreadOf(from).R) : (toCover ? coverTex : spreadOf(to).R));
+  setMap(leafBackMat, fwd ? spreadOf(to).L : spreadOf(from).L);
+  ST.turn = { t:0, fwd, from, to, started:false, landed:false, rose:false, half:false };
+  ST.busy = true; camMode = toCover ? 'cover' : 'open';
+  if(toCover){ LT = lookOf(COVER_LOOK); document.body.classList.add('closing'); }
+  else { LT = lookOf(SC[to].look); Music.setMood(SC[to].mood); setChapter(to); }
+}
+function updateTurn(dt){
+  const T = ST.turn; T.t += dt;
+  const L0 = T.from < 0 ? .2 : (REDUCED ? .3 : .55), LD = REDUCED ? .6 : 1.45;
+  const p = clamp((T.t - L0) / LD);
+  if(T.t >= L0 && !T.started){ T.started = true; showLeaf(true); Sfx.turn();
+    if(T.fwd) setMap(pageMatR, spreadOf(T.to).R); else if(T.to >= 0) setMap(pageMatL, spreadOf(T.to).L); else pageL.visible = false; }
+  if(!T.started) return;
+  const e = ease(p), theta = T.fwd ? Math.PI * e : Math.PI * (1 - e);
+  setLeaf(theta, (T.fwd ? -1 : 1) * .75 * Math.sin(theta));
+  if(T.from < 0 && !T.half && theta > Math.PI * .5){ T.half = true; [pageL, stackL, boardL].forEach(m => m.visible = true); setMap(pageMatL, spreadOf(T.to).L); }
+  if(T.to < 0 && !T.half && theta < Math.PI * .5){ T.half = true; [stackL, boardL].forEach(m => m.visible = false); }
+  if(T.to >= 0 && p >= .86 && !T.rose){ T.rose = true; riseScene(objs[T.to]); Sfx.pop(); }
+  if(p >= 1 && !T.landed){ T.landed = true; Sfx.land();
+    if(T.to < 0) setMap(pageMatR, spreadOf(0).R);
+    else { showLeaf(false); if(T.fwd) setMap(pageMatL, spreadOf(T.to).L); else setMap(pageMatR, spreadOf(T.to).R); } }
+  if(T.landed && T.t > L0 + LD + .25){
+    ST.cur = T.to; ST.busy = false; ST.turn = null;
+    const c = ST.cur;
+    if(c < 0){ prune([0, 1]); document.body.classList.remove('open', 'closing'); applyPendingLang(); return; }
+    prune([c - 1, c, c + 1]);
+    setTimeout(() => { if(ST.cur === c){ ensure(c + 1); ensure(c - 1); } }, 3200);
+    if(applyPendingLang()) return;
+    setTimeout(() => { if(ST.cur === c && !ST.busy) narrate(c); }, 900);
+  }
+}
+function narrate(i){
+  clearTimeout(autoTimer);
+  Narr.play(TX(i).narr, (k, line) => setCaption(line), () => {
+    if(i === SC.length - 1){ ui.again.hidden = false; return; }
+    if(ST.auto) autoTimer = setTimeout(() => { if(!ST.busy && ST.cur === i) go(i + 1); }, 2600);
+  });
+}
+function showNote(t){ ui.note.textContent = t; ui.note.hidden = false; clearTimeout(noteTimer); noteTimer = setTimeout(() => ui.note.hidden = true, 6500); }
+function voiceCheck(){ if(!Narr.supported) showNote(UI[LANG].noSpeech); else if(Narr.on && !Narr.pick()) showNote(UI[LANG].noVoice); else ui.note.hidden = true; }
+
+/* ---------- 한국어 ⇄ English ---------- */
+let pendingLang = null;
+function applyTexts(){
+  const t = UI[LANG];
+  document.documentElement.lang = LANG; document.body.classList.toggle('en', LANG === 'en'); document.title = t.doc;
+  document.querySelectorAll('[data-t]').forEach(el => { if(el.hasAttribute('data-html')) el.innerHTML = t[el.dataset.t]; else el.textContent = t[el.dataset.t]; });
+  document.querySelectorAll('[data-tt]').forEach(el => el.title = t[el.dataset.tt]);
+  document.querySelectorAll('[data-ta]').forEach(el => el.setAttribute('aria-label', t[el.dataset.ta]));
+  ui.lang.setAttribute('aria-label', t.langTip);
+  [...ui.dots.children].forEach((b, i) => { b.title = t.dot(i, TX(i).title); b.setAttribute('aria-label', b.title); });
+  if(ST.cur >= 0) setChapter(ST.cur);
+}
+function rebuildTextures(){
+  if(coverTex){ coverTex.dispose(); coverTex = makeCover(); }
+  Object.keys(spreads).forEach(k => { spreads[k].L.dispose(); spreads[k].R.dispose(); delete spreads[k]; });
+  if(ST.cur < 0){ setMap(leafFrontMat, coverTex); setMap(leafBackMat, spreadOf(0).L); setMap(pageMatR, spreadOf(0).R); }
+  else { setMap(pageMatL, spreadOf(ST.cur).L); setMap(pageMatR, spreadOf(ST.cur).R); }
+}
+function setLang(l){
+  LANG = l; try { localStorage.setItem('ai-popup-lang', l); } catch(e){}
+  applyTexts(); if(coverTex) rebuildTextures();
+  if(ST.started){ voiceCheck(); if(ST.cur >= 0) narrate(ST.cur); }
+}
+function applyPendingLang(){ if(!pendingLang) return false; const l = pendingLang; pendingLang = null; if(l !== LANG){ setLang(l); return ST.cur >= 0; } return false; }
+
+/* ---------- 입력 ---------- */
+ui.prev.onclick = () => go(ST.cur - 1);
+ui.next.onclick = () => go(ST.cur + 1);
+ui.again.onclick = () => go(0);
+ui.home.onclick = () => go(-1);
+ui.lang.onclick = () => { const l = (pendingLang || LANG) === 'ko' ? 'en' : 'ko';
+  if(ST.busy){ pendingLang = l; const t = UI[l]; ui.lang.querySelector('span').textContent = t.lang; return; }
+  setLang(l); };
+ui.music.onclick = () => { const on = ui.music.getAttribute('aria-pressed') !== 'true'; ui.music.setAttribute('aria-pressed', on); Aud.setOn(on); };
+ui.voice.onclick = () => { const on = ui.voice.getAttribute('aria-pressed') !== 'true'; ui.voice.setAttribute('aria-pressed', on); Narr.on = on;
+  if(!on && Narr.supported) try { speechSynthesis.cancel(); } catch(e){} };
+ui.auto.onclick = () => { ST.auto = ui.auto.getAttribute('aria-pressed') !== 'true'; ui.auto.setAttribute('aria-pressed', ST.auto); if(!ST.auto) clearTimeout(autoTimer); };
+ui.replay.onclick = () => { if(ST.started && !ST.busy && ST.cur >= 0) narrate(ST.cur); };
+addEventListener('keydown', e => {
+  if(e.target.closest && e.target.closest('button') && (e.key === 'Enter' || e.key === ' ')) return;
+  if(ST.cur < 0){ if(e.key === 'Enter' && !ui.open.disabled && !ST.busy) ui.open.click(); return; }
+  if(e.key === 'ArrowRight' || e.key === 'PageDown') go(ST.cur + 1);
+  else if(e.key === 'ArrowLeft' || e.key === 'PageUp') go(ST.cur - 1);
+  else if(e.key === 'Home' || e.key === 'Escape') go(-1);
+});
+let down = null;
+canvas.addEventListener('pointerdown', e => { down = { x:e.clientX, y:e.clientY, t:performance.now() }; });
+canvas.addEventListener('pointerup', e => { if(!down || ST.cur < 0) return; const dx = e.clientX - down.x, dy = e.clientY - down.y; down = null;
+  if(Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) go(ST.cur + (dx < 0 ? 1 : -1)); });
+
+ui.open.onclick = () => {
+  if(ST.busy || ST.cur >= 0) return;
+  Aud.init();
+  if(!ST.started){ ST.started = true; Narr.prime(); Music.start(SC[0].mood); setTimeout(voiceCheck, 1600); }
+  document.body.classList.add('open');
+  go(0);
+};
+
+/* =========================================================
+   시작
+   ========================================================= */
+let coverTex = null;
+let last = performance.now(), T = 0;
+function tick(dt){
+  T += dt;
+  if(ST.turn) updateTurn(dt);
+  for(const k in objs) updateScene(objs[k], dt, T);
+  updateLook(dt); updateCamera(dt, T, false);
+  pMat.uniforms.uTime.value = T;
+}
+function frame(now){
+  requestAnimationFrame(frame);
+  tick(Math.min(.1, (now - last) / 1000)); last = now;
+  renderer.render(scene, cam);
+}
+async function boot(){
+  applyTexts();
+  const sample = SC.map(s => s.title + s.line).join('') + '제장끝사랑을배운아이입체그림책열네개의장면영화에바치는헌정「」()·—0123456789';
+  const enSample = EN.map(s => s.title + s.line).join('') + 'A.I. Chapter The End Pop-up Book Fourteen Scenes 0123456789 —·()';
+  try { await Promise.race([ Promise.all([
+      document.fonts.load('400 40px "Gowun Batang"', sample), document.fonts.load('700 40px "Gowun Batang"', sample),
+      document.fonts.load('italic 500 80px "Cormorant Garamond"', enSample), document.fonts.load('500 80px "Cormorant Garamond"', enSample),
+      document.fonts.load('italic 400 80px "Cormorant Garamond"', enSample) ]),
+    new Promise(r => setTimeout(r, 4000)) ]); } catch(e){}
+  resize();
+  coverTex = makeCover();
+  ensure(0);
+  setMap(leafFrontMat, coverTex); setMap(leafBackMat, spreadOf(0).L); setMap(pageMatR, spreadOf(0).R);
+  [pageL, stackL, boardL].forEach(m => m.visible = false);
+  setLeaf(0, 0); showLeaf(true);
+  updateLook(1); updateCamera(0, 0, true);
+  requestAnimationFrame(t => { last = t; frame(t); });
+  ui.loading.classList.add('gone'); ui.open.disabled = false;
+  setTimeout(() => ensure(1), 600);
+}
+boot();
+})();
+</script>
