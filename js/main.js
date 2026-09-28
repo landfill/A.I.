@@ -27,8 +27,10 @@ function go(to){
   const from = ST.cur, fwd = to > from, toCover = to < 0;
   ensure(toCover ? 0 : to);
   if(from >= 0 && objs[from]) foldScene(objs[from]);
-  setMap(leafFrontMat, fwd ? (from < 0 ? coverTex : spreadOf(from).R) : (toCover ? coverTex : spreadOf(to).R));
-  setMap(leafBackMat, fwd ? spreadOf(to).L : spreadOf(from).L);
+  if(from >= 0 && !toCover){
+    setMap(leafFrontMat, fwd ? spreadOf(from).R : spreadOf(to).R);
+    setMap(leafBackMat, fwd ? spreadOf(to).L : spreadOf(from).L);
+  }
   ST.turn = { t:0, fwd, from, to, started:false, landed:false, rose:false, half:false };
   ST.busy = true; camMode = toCover ? 'cover' : 'open';
   if(toCover){ LT = lookOf(COVER_LOOK); document.body.classList.add('closing'); }
@@ -38,17 +40,17 @@ function updateTurn(dt){
   const T = ST.turn; T.t += dt;
   const L0 = T.from < 0 ? .2 : (REDUCED ? .3 : .55), LD = REDUCED ? .6 : 1.45;
   const p = clamp((T.t - L0) / LD);
-  if(T.t >= L0 && !T.started){ T.started = true; showLeaf(true); Sfx.turn();
-    if(T.fwd) setMap(pageMatR, spreadOf(T.to).R); else if(T.to >= 0) setMap(pageMatL, spreadOf(T.to).L); else pageL.visible = false; }
+  const cover = T.from < 0 || T.to < 0;  /* 표지를 여닫을 때는 책장 대신 양장 앞표지가 돈다 */
+  if(T.t >= L0 && !T.started){ T.started = true; showLeaf(!cover); Sfx.turn();
+    if(T.fwd) setMap(pageMatR, spreadOf(T.to).R); else if(T.to >= 0) setMap(pageMatL, spreadOf(T.to).L); else [pageL, stackL].forEach(m => m.visible = false); }
   if(!T.started) return;
   const e = ease(p), theta = T.fwd ? Math.PI * e : Math.PI * (1 - e);
-  setLeaf(theta, (T.fwd ? -1 : 1) * .75 * Math.sin(theta));
-  if(T.from < 0 && !T.half && theta > Math.PI * .5){ T.half = true; [pageL, stackL, boardL].forEach(m => m.visible = true); setMap(pageMatL, spreadOf(T.to).L); }
-  if(T.to < 0 && !T.half && theta < Math.PI * .5){ T.half = true; [stackL, boardL].forEach(m => m.visible = false); }
+  if(cover) setCover(theta); else setLeaf(theta, (T.fwd ? -1 : 1) * .75 * Math.sin(theta));
+  if(T.from < 0 && !T.half && theta > Math.PI * .5){ T.half = true; [pageL, stackL].forEach(m => m.visible = true); setMap(pageMatL, spreadOf(T.to).L); }
   if(T.to >= 0 && p >= .86 && !T.rose){ T.rose = true; riseScene(objs[T.to]); Sfx.pop(); }
-  if(p >= 1 && !T.landed){ T.landed = true; Sfx.land();
+  if(p >= 1 && !T.landed){ T.landed = true; Sfx.land(); showLeaf(false);
     if(T.to < 0) setMap(pageMatR, spreadOf(0).R);
-    else { showLeaf(false); if(T.fwd) setMap(pageMatL, spreadOf(T.to).L); else setMap(pageMatR, spreadOf(T.to).R); } }
+    else if(T.fwd) setMap(pageMatL, spreadOf(T.to).L); else setMap(pageMatR, spreadOf(T.to).R); }
   if(T.landed && T.t > L0 + LD + .25){
     ST.cur = T.to; ST.busy = false; ST.turn = null;
     const c = ST.cur;
@@ -82,9 +84,9 @@ function applyTexts(){
   if(ST.cur >= 0) setChapter(ST.cur);
 }
 function rebuildTextures(){
-  if(coverTex){ coverTex.dispose(); coverTex = makeCover(); }
+  if(coverTex){ coverTex.dispose(); coverTex = makeCover(); setMap(coverTopMat, coverTex); }
   Object.keys(spreads).forEach(k => { spreads[k].L.dispose(); spreads[k].R.dispose(); delete spreads[k]; });
-  if(ST.cur < 0){ setMap(leafFrontMat, coverTex); setMap(leafBackMat, spreadOf(0).L); setMap(pageMatR, spreadOf(0).R); }
+  if(ST.cur < 0) setMap(pageMatR, spreadOf(0).R);
   else { setMap(pageMatL, spreadOf(ST.cur).L); setMap(pageMatR, spreadOf(ST.cur).R); }
 }
 function setLang(l){
@@ -156,9 +158,9 @@ async function boot(){
   resize();
   coverTex = makeCover();
   ensure(0);
-  setMap(leafFrontMat, coverTex); setMap(leafBackMat, spreadOf(0).L); setMap(pageMatR, spreadOf(0).R);
-  [pageL, stackL, boardL].forEach(m => m.visible = false);
-  setLeaf(0, 0); showLeaf(true);
+  setMap(coverTopMat, coverTex); setMap(pageMatR, spreadOf(0).R);
+  [pageL, stackL].forEach(m => m.visible = false);
+  setLeaf(0, 0); showLeaf(false); setCover(0);
   updateLook(1); updateCamera(0, 0, true);
   requestAnimationFrame(t => { last = t; frame(t); });
   ui.loading.classList.add('gone'); ui.open.disabled = false;

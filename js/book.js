@@ -47,8 +47,20 @@ const book = new THREE.Group(); scene.add(book);
 const boardMat = new THREE.MeshStandardMaterial({ color:'#18203a', roughness:.85 });
 const edgeMat = new THREE.MeshStandardMaterial({ color:'#e2d6bf', roughness:.95 });
 const mkBox = (w, h, d, m, x, y) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(x, y, 0); b.castShadow = b.receiveShadow = true; book.add(b); return b; };
-const boardL = mkBox(W + .16, .06, H + .3, boardMat, -W / 2 - .08, -.25);
 const boardR = mkBox(W + .16, .06, H + .3, boardMat, W / 2 + .08, -.25);
+
+/* 앞표지: 뒤판과 같은 크기·두께의 양장 판. 책등 아래(y -.11)를 축으로 돌아서,
+   덮으면 오른쪽 종이 더미 위에, 펼치면 뒤판과 같은 높이의 왼쪽 판이 된다 */
+const endpaperTex = (() => { const c = mk(512, 716), g = c.getContext('2d');
+  g.fillStyle = '#1d2747'; g.fillRect(0, 0, 512, 716); g.fillStyle = g.createPattern(grainCv, 'repeat'); g.fillRect(0, 0, 512, 716);
+  for(let y = 30; y < 716; y += 56) for(let x = (y / 56 % 2) * 28 + 20; x < 512; x += 56) D.star(g, 'rgba(217,184,119,.28)', x, y, 5);
+  return tex(c); })();
+const coverTopMat = new THREE.MeshStandardMaterial({ roughness:.72, metalness:.04 });
+const coverHinge = new THREE.Group(); coverHinge.position.set(0, -.11, 0); book.add(coverHinge);
+const coverBoard = new THREE.Mesh(new THREE.BoxGeometry(W + .16, .06, H + .3),
+  [boardMat, boardMat, coverTopMat, new THREE.MeshStandardMaterial({ map:endpaperTex, roughness:.9 }), boardMat, boardMat]);
+coverBoard.position.set(W / 2 + .08, .14, 0); coverBoard.castShadow = coverBoard.receiveShadow = true; coverHinge.add(coverBoard);
+function setCover(theta){ coverHinge.rotation.z = theta; }
 const stackL = mkBox(W - .03, .22, H - .03, edgeMat, -W / 2, -.11);
 const stackR = mkBox(W - .03, .22, H - .03, edgeMat, W / 2, -.11);
 const pageGeo = x => { const g = new THREE.PlaneGeometry(W, H); g.rotateX(-Math.PI / 2); g.translate(x, .003, 0); return g; };

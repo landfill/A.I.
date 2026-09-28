@@ -35,15 +35,15 @@ const Narr = {
       if(tok !== this.token) return;
       if(i >= lines.length){ Aud.duck(false); onDone && onDone(); return; }
       const line = lines[i]; onLine(i, line); i++;
-      let done = false; const fin = () => { if(done || tok !== this.token) return; done = true; clearTimeout(this.timer); this.timer = setTimeout(next, 650); };
+      let done = false; const fin = () => { if(done || tok !== this.token) return; done = true; clearTimeout(this.timer); this.timer = setTimeout(next, 950); };
       const v = this.on ? this.pick() : null, en = LANG === 'en';
       if(v){
-        const u = new SpeechSynthesisUtterance(line); u.voice = v; u.lang = v.lang; u.rate = en ? .9 : .92; u.pitch = this.pc[LANG] || 1; u.volume = 1;
+        const u = new SpeechSynthesisUtterance(line); u.voice = v; u.lang = v.lang; u.rate = en ? .82 : .84; u.pitch = this.pc[LANG] || 1; u.volume = 1;
         u.onend = fin; u.onerror = fin; this.utts.push(u); if(this.utts.length > 30) this.utts.splice(0, 15);
         Aud.duck(true); try { speechSynthesis.resume(); speechSynthesis.speak(u); } catch(e){ fin(); }
-        this.timer = setTimeout(fin, 3500 + line.length * (en ? 115 : 240));
+        this.timer = setTimeout(fin, 4000 + line.length * (en ? 130 : 270));
       } else {
-        Aud.duck(false); this.timer = setTimeout(fin, 1800 + line.length * (en ? 55 : 105));
+        Aud.duck(false); this.timer = setTimeout(fin, 2000 + line.length * (en ? 62 : 118));
       }
     };
     /* 방금 cancel()한 직후 곧바로 speak()하면 첫 문장이 버려지는 브라우저가 있어 잠깐 기다린다 */
